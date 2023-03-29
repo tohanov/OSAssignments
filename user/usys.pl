@@ -36,4 +36,7 @@ entry("getpid");
 entry("sbrk");
 entry("sleep");
 entry("uptime");
+
+# added for assignments
 entry("memsize");
+# =====================

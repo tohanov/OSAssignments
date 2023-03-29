@@ -9,10 +9,19 @@
 uint64
 sys_exit(void)
 {
-  int n;
-  argint(0, &n);
-  exit(n);
-  return 0;  // not reached
+	int n;
+
+	// added for assignments 
+		char exit_msg[32];
+
+		if (argstr(1, exit_msg, 32) < 0) { // copy from user space to kernel space
+			exit_msg[31] = '\0';
+		}
+	// =====================
+
+	argint(0, &n);
+	exit(n, exit_msg);
+	return 0;  // not reached
 }
 
 uint64
@@ -32,7 +41,11 @@ sys_wait(void)
 {
   uint64 p;
   argaddr(0, &p);
-  return wait(p);
+
+	uint64 exit_msg;
+	argaddr(1, &exit_msg);
+
+  return wait(p, exit_msg);
 }
 
 uint64

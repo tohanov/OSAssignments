@@ -5,7 +5,6 @@
 int
 main(int argc, char *argv[])
 {
-	printf("Hello World xv6\n");
-
-	exit(0, "");
+	// printf("REMOVEME: inside goodbye");
+	exit(0, "Goodbye world xv6");
 }
