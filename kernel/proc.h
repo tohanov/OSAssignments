@@ -106,6 +106,10 @@ struct proc {
   char name[16];               // Process name (debugging)
 
   // added for assignments
-  char exit_msg[32];
+  //task3:
+  char exit_msg[32]; 
+  //task5:
+  int ps_priority;        // process priority (1 = highest, 10 = lowest)
+  long long accumulator;  // accumulated value for priority scheduling 
   // =====================
 };
