@@ -42,8 +42,11 @@ sys_wait(void)
   uint64 p;
   argaddr(0, &p);
 
-	uint64 exit_msg;
-	argaddr(1, &exit_msg);
+
+	// added for assignments
+	uint64 exit_msg; // as1ts2
+	argaddr(1, &exit_msg); // as1ts2
+	// =====================
 
   return wait(p, exit_msg);
 }
@@ -103,8 +106,33 @@ sys_uptime(void)
   return xticks;
 }
 
-int
+/* as1ts2 */ uint64
 sys_memsize(void)
 {
   return myproc()->sz;
+}
+
+/* as1ts5 */ uint64
+sys_set_ps_priority(void)
+{
+	int priority;
+	argint(0, &priority);
+
+	// clamp between 1 and 10, inclusive
+	priority = (priority > 10) ? 10 : priority;
+	priority = (priority < 1) ? 1 : priority;
+
+	struct proc *current_proc = myproc();
+
+	acquire(&current_proc->lock);
+	current_proc->ps_priority = priority;
+	release(&current_proc->lock);
+
+	return 0; // required for compilation to pass
+}
+
+/* as1ts5 */ uint64
+sys_get_ps_priority(void)
+{
+	return myproc()->ps_priority;
 }

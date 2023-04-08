@@ -22,8 +22,7 @@
 #define SYS_close  21
 
 // added for assignments
-//task2
-#define SYS_memsize  22
-//task5
-#define set_ps_set_ps_priority 23
+#define SYS_memsize  22 // as1ts2
+#define SYS_set_ps_priority  23 // as1ts5
+#define SYS_get_ps_priority  24 // as1ts5
 // =====================

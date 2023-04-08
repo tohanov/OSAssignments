@@ -101,7 +101,13 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
-extern uint64 sys_memsize(void);
+
+// added for assignments
+extern uint64 sys_memsize(void); // as1ts2
+extern uint64 sys_set_ps_priority(void); // as1ts5
+extern uint64 sys_get_ps_priority(void); // as1ts5
+// =====================
+
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -129,7 +135,9 @@ static uint64 (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 
 // added for assignments
-[SYS_memsize]   sys_memsize,
+[SYS_memsize]   sys_memsize, // as1ts2
+[SYS_set_ps_priority]   sys_set_ps_priority, // as1ts5
+[SYS_get_ps_priority]   sys_get_ps_priority, // as1ts5
 // =====================
 };
 

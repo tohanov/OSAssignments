@@ -135,6 +135,7 @@ UPROGS=\
 	$U/_helloworld\
 	$U/_memsize_test\
 	$U/_goodbyeworld\
+	$U/_priority_changer\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

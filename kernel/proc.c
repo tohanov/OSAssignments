@@ -125,6 +125,12 @@ found:
   p->pid = allocpid();
   p->state = USED;
 
+  // added for assignments
+  //   p->accumulator = get_minimum_accumulator(); // as1ts5
+  set_accumulator_to_min(p); // as1ts5
+  p->ps_priority = 5; // as1ts5
+  // =====================
+
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
     freeproc(p);
@@ -451,31 +457,29 @@ wait(uint64 addr, uint64 usermode_exit_msg)
 void
 scheduler(void)
 {
-  struct proc *p;
-  struct cpu *c = mycpu();
-  
-  c->proc = 0;
-  for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
-    intr_on();
+	struct proc *p;
+	struct cpu *c = mycpu();
 
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
+	c->proc = 0;
+	for(;;) {
+		// Avoid deadlock by ensuring that devices can interrupt.
+		intr_on();
 
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-      }
-      release(&p->lock);
-    }
-  }
+		p = get_min_accumulator_process();
+		if (p != NULL) { // got a locked runnable proc
+			// Switch to chosen process.  It is the process's job
+			// to release its lock and then reacquire it
+			// before jumping back to us.
+			p->state = RUNNING;
+			c->proc = p;
+			swtch(&c->context, &p->context);
+
+			// Process is done running for now.
+			// It should have changed its p->state before coming back.
+			c->proc = NULL;
+			release(&p->lock);
+		}
+	}
 }
 
 // Switch to scheduler.  Must hold only p->lock
@@ -579,6 +583,7 @@ wakeup(void *chan)
     if(p != myproc()){
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
+		set_accumulator_to_min(p);
         p->state = RUNNABLE;
       }
       release(&p->lock);
@@ -688,3 +693,78 @@ procdump(void)
     printf("\n");
   }
 }
+
+
+
+// added for assignments
+
+/* as1ts5 */ long long min(long long value1, long long value2) {
+	return value1 < value2 ? value1 : value2;
+}
+
+/* as1ts5 */ long long get_min_accumulator_aside(int skip_pid) {
+	struct proc *p;
+	long long minimum_accumulator = __LONG_LONG_MAX__;
+	bool only_running_runnable = TRUE;
+
+	for(p = proc; p < &proc[NPROC]; p++) {
+		// acquire(&p->lock);
+		if(p->pid != skip_pid 
+		&& (p->state == RUNNING || p->state == RUNNABLE)) {
+			only_running_runnable = 0;
+			minimum_accumulator = min(p->accumulator, minimum_accumulator);
+		}
+
+		if (only_running_runnable) {
+			minimum_accumulator = 0;
+		}
+
+		// release(&p->lock);
+	}
+
+	return minimum_accumulator;
+}
+
+/* as1ts5 */ void set_accumulator_to_min(struct proc *process) {
+	process->accumulator = get_min_accumulator_aside(process->pid);
+}
+
+/* as1ts5 */ void update_accumulator(struct proc *process) {
+	process->accumulator += process->ps_priority;
+}
+
+// if finds a runnable process, *locks it* and returns a pointer to it
+// else returns NULL
+/* as1ts5 */ struct proc* get_min_accumulator_process() {
+	struct proc *min_proc = proc;
+
+	for (; min_proc < &proc[NPROC]; ++min_proc) {
+		acquire(&min_proc->lock);
+
+		if (min_proc->state == RUNNABLE) {
+			break;
+		}
+
+		release(&min_proc->lock);
+	}
+
+	if (min_proc < &proc[NPROC]) { // acquired a runnable proc's lock
+		for (struct proc *iter_p = min_proc + 1; iter_p < &proc[NPROC]; ++iter_p) {
+			acquire(&iter_p->lock);
+
+			if (iter_p->state == RUNNABLE && iter_p->accumulator < min_proc->accumulator) {
+				release(&min_proc->lock);
+				min_proc = iter_p;
+			}
+			else {
+				release(&iter_p->lock);
+			}
+		}
+
+		return min_proc;
+	}
+	else {
+		return NULL;
+	}
+}
+// =====================

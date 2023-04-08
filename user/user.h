@@ -23,11 +23,14 @@ char* sbrk(int);
 int sleep(int);
 int uptime(void);
 
-	// added for assignments 
-	int memsize(void);
-	int exit(int, char*) __attribute__((noreturn));
-	int wait(int*, char*);
-	// =====================
+// added for assignments 
+int memsize(void); // as1ts2
+int exit(int, char*) __attribute__((noreturn)); // as1ts3
+int wait(int*, char*); // as1ts3
+void set_ps_priority(int); // as1ts5
+int get_ps_priority(void); // as1ts5
+// =====================
+
 
 // ulib.c
 int stat(const char*, struct stat*);

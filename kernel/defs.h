@@ -192,3 +192,15 @@ void            virtio_disk_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+// added for assignments
+// long long get_minimum_accumulator(); // as1ts5
+void set_accumulator_to_min(struct proc *process); // as1ts5
+void update_accumulator(struct proc *process); // as1ts5
+struct proc* get_min_accumulator_process(); // as1ts5
+
+#define NULL 	0
+#define TRUE 	1
+#define FALSE 	0
+typedef char bool;
+// =====================

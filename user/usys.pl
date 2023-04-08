@@ -38,5 +38,7 @@ entry("sleep");
 entry("uptime");
 
 # added for assignments
-entry("memsize");
+entry("memsize"); # as1ts2
+entry("set_ps_priority"); # as1ts5
+entry("get_ps_priority"); # as1ts5
 # =====================
