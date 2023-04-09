@@ -112,15 +112,21 @@ sys_memsize(void)
   return myproc()->sz;
 }
 
+// clamp between min and max, inclusive
+/* as1ts5 */ void clamp_int(int *variable, int min, int max) {
+	*variable =
+		(*variable > max) ? max
+		: (*variable < min) ? min
+		: *variable;
+}
+
 /* as1ts5 */ uint64
 sys_set_ps_priority(void)
 {
 	int priority;
 	argint(0, &priority);
 
-	// clamp between 1 and 10, inclusive
-	priority = (priority > 10) ? 10 : priority;
-	priority = (priority < 1) ? 1 : priority;
+	clamp_int(&priority, 1, 10);
 
 	struct proc *current_proc = myproc();
 
@@ -135,4 +141,56 @@ sys_set_ps_priority(void)
 sys_get_ps_priority(void)
 {
 	return myproc()->ps_priority;
+}
+
+/* as1ts6 */ uint64
+sys_set_cfs_priority(void)
+{
+	int priority;
+	argint(0, &priority);
+
+	if (priority > 2 || priority < 0) return -1;
+
+	struct proc *current_proc = myproc();
+
+	acquire(&current_proc->lock);
+	current_proc->cfs_priority = priority;
+	release(&current_proc->lock);
+
+	return 0;
+}
+
+/* as1ts6 */ uint64
+sys_get_cfs_priority(void)
+{
+	int target_pid;
+	argint(0, &target_pid);
+
+	uint64 destination_address;
+	argaddr(1, &destination_address);
+
+	struct proc *target_proc = find_proc_by_pid(target_pid);
+
+	uint64 return_array[4];
+
+	if (target_proc != NULL) { // found and locked proc
+		return_array[0] = target_proc->cfs_priority;
+		return_array[1] = target_proc->rtime;
+		return_array[2] = target_proc->stime;
+		return_array[3] = target_proc->retime;
+
+		release(&target_proc->lock);
+	}
+	else { // proc not found
+		for (int i = 0; i < 4; ++i) {
+			return_array[i] = -1;
+		}
+	}
+
+	return copyout(
+		myproc()->pagetable, 
+		destination_address,
+		(char*)return_array, 
+		4*sizeof(uint64)
+	);
 }

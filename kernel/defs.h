@@ -107,10 +107,11 @@ int             either_copyout(int user_dst, uint64 dst, void *src, uint64 len);
 int             either_copyin(void *dst, int user_src, uint64 src, uint64 len);
 void            procdump(void);
 
-	// added for assignments 
-	void            exit(int, char*);
-	int             wait(uint64, uint64);
-	// =====================
+// added for assignments 
+void            exit(int, char*); // as1ts3
+int             wait(uint64, uint64); // as1ts3
+// =====================
+
 
 // swtch.S
 void            swtch(struct context*, struct context*);
@@ -196,11 +197,22 @@ void            virtio_disk_intr(void);
 // added for assignments
 // long long get_minimum_accumulator(); // as1ts5
 void set_accumulator_to_min(struct proc *process); // as1ts5
-void update_accumulator(struct proc *process); // as1ts5
-struct proc* get_min_accumulator_process(); // as1ts5
+void update_ps_accumulator(struct proc *process); // as1ts5
+// struct proc* get_min_accumulator_process(); // as1ts5
+// struct proc* get_min_vruntime_process(); // as1ts6
+void update_cfs_counters(); // as1ts6
+struct proc* get_prioritized_process(uint8 (*prioritizer)(struct proc *, struct proc *)); // as1ts6
+struct proc* find_proc_by_pid(int target_pid); // as1ts6
 
 #define NULL 	0
-#define TRUE 	1
-#define FALSE 	0
+
 typedef char bool;
+#define TRUE 	((bool)1)
+#define FALSE 	((bool)0)
+
+enum CFS_PRIORITIES {
+	HIGH = 0,
+	NORMAL = 1,
+	LOW = 2,
+};
 // =====================

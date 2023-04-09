@@ -106,6 +106,8 @@ extern uint64 sys_close(void);
 extern uint64 sys_memsize(void); // as1ts2
 extern uint64 sys_set_ps_priority(void); // as1ts5
 extern uint64 sys_get_ps_priority(void); // as1ts5
+extern uint64 sys_set_cfs_priority(void); // as1ts6
+extern uint64 sys_get_cfs_priority(void); // as1ts6
 // =====================
 
 
@@ -138,6 +140,8 @@ static uint64 (*syscalls[])(void) = {
 [SYS_memsize]   sys_memsize, // as1ts2
 [SYS_set_ps_priority]   sys_set_ps_priority, // as1ts5
 [SYS_get_ps_priority]   sys_get_ps_priority, // as1ts5
+[SYS_set_cfs_priority]   sys_set_cfs_priority, // as1ts6
+[SYS_get_cfs_priority]   sys_get_cfs_priority, // as1ts6
 // =====================
 };
 

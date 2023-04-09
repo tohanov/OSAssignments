@@ -109,5 +109,10 @@ struct proc {
   char exit_msg[32]; // as1ts3
   long long accumulator; // as1ts5
   int ps_priority; // as1ts5
+
+  int cfs_priority; // as1ts6 // used for decay factor
+  long long rtime; // as1ts6 // run time
+  long long stime; // as1ts6 // sleep time
+  long long retime; // as1ts6 // runnable time
   // =====================
 };

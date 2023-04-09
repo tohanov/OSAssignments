@@ -77,9 +77,16 @@ usertrap(void)
     exit(-1, "");
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2) {
-	update_accumulator(p);
-    yield();
+  if (which_dev == 2) {
+	// added for assignments
+	update_ps_accumulator(p);
+
+	if (cpuid() == 0) {
+		update_cfs_counters(); // as1ts6
+	}
+	// =====================
+
+	yield();
   }
 
   usertrapret();
@@ -152,12 +159,18 @@ kerneltrap()
     panic("kerneltrap");
   }
 
-
-
+	// added for assignments 
+	if (which_dev == 2 && cpuid() == 0) {
+		update_cfs_counters(); // as1ts6
+	}
+	// =====================
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING) {
-	update_accumulator(myproc());
+	// added for assignments 
+	update_ps_accumulator(myproc()); // as1ts5
+	// =====================
+	
     yield();
   }
 
@@ -166,6 +179,7 @@ kerneltrap()
   w_sepc(sepc);
   w_sstatus(sstatus);
 }
+
 
 void
 clockintr()
@@ -211,7 +225,7 @@ devintr()
   } else if(scause == 0x8000000000000001L){
     // software interrupt from a machine-mode timer interrupt,
     // forwarded by timervec in kernelvec.S.
-
+	
     if(cpuid() == 0){
       clockintr();
     }

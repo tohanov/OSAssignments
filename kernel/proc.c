@@ -6,6 +6,12 @@
 #include "proc.h"
 #include "defs.h"
 
+
+// added for assignments 
+uint8 vruntime_prioritizer(struct proc* process1, struct proc* process2); // as1ts6
+uint8 accumulator_prioritizer(struct proc* process1, struct proc* process2); // as1ts6
+// =====================
+
 struct cpu cpus[NCPU];
 
 struct proc proc[NPROC];
@@ -129,6 +135,11 @@ found:
   //   p->accumulator = get_minimum_accumulator(); // as1ts5
   set_accumulator_to_min(p); // as1ts5
   p->ps_priority = 5; // as1ts5
+
+  p->cfs_priority = NORMAL; // as1ts6
+  p->retime = 1; // as1ts6 // to avoid division by zero in the formula
+  p->stime = 0; // as1ts6
+  p->rtime = 0; // as1ts6
   // =====================
 
   // Allocate a trapframe page.
@@ -294,6 +305,10 @@ fork(void)
     return -1;
   }
 
+	// added for assignments 
+	np->cfs_priority = p->cfs_priority; // as1ts6
+	// =====================
+
   // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
     freeproc(np);
@@ -425,7 +440,7 @@ wait(uint64 addr, uint64 usermode_exit_msg)
             return -1;
           }
 
-			if (usermode_exit_msg != 0) copyout(p->pagetable, usermode_exit_msg, pp->exit_msg, 32);
+			if (usermode_exit_msg != NULL) copyout(p->pagetable, usermode_exit_msg, pp->exit_msg, 32);
 
           freeproc(pp);
           release(&pp->lock);
@@ -465,7 +480,11 @@ scheduler(void)
 		// Avoid deadlock by ensuring that devices can interrupt.
 		intr_on();
 
-		p = get_min_accumulator_process();
+	// added for assignments
+		// p = get_min_accumulator_process();
+		// p = get_prioritized_process(accumulator_prioritizer);
+		p = get_prioritized_process(vruntime_prioritizer);
+
 		if (p != NULL) { // got a locked runnable proc
 			// Switch to chosen process.  It is the process's job
 			// to release its lock and then reacquire it
@@ -479,6 +498,7 @@ scheduler(void)
 			c->proc = NULL;
 			release(&p->lock);
 		}
+	// =====================
 	}
 }
 
@@ -729,7 +749,7 @@ procdump(void)
 	process->accumulator = get_min_accumulator_aside(process->pid);
 }
 
-/* as1ts5 */ void update_accumulator(struct proc *process) {
+/* as1ts5 */ void update_ps_accumulator(struct proc *process) {
 	process->accumulator += process->ps_priority;
 }
 
@@ -766,5 +786,132 @@ procdump(void)
 	else {
 		return NULL;
 	}
+}
+
+/* as1ts6 */ uint8 calculate_vruntime(struct proc* process) {
+	return (75 + 25 * process->cfs_priority)
+		* process->rtime 
+		/ (process->rtime + process->stime + process->retime);
+}
+
+/* as1ts6 */ uint8 vruntime_prioritizer(struct proc* process1, struct proc* process2) {
+	return (calculate_vruntime(process1) < calculate_vruntime(process2))
+		? 1 : 2;
+}
+
+/* as1ts6 */ uint8 accumulator_prioritizer(struct proc* process1, struct proc* process2) {
+	return (process1->accumulator < process2->accumulator)
+		? 1: 2;
+}
+
+// /* as1ts6 */ struct proc* get_min_vruntime_process() {
+// 	struct proc *min_proc = proc;
+
+// 	for (; min_proc < &proc[NPROC]; ++min_proc) {
+// 		acquire(&min_proc->lock);
+
+// 		if (min_proc->state == RUNNABLE) {
+// 			break;
+// 		}
+
+// 		release(&min_proc->lock);
+// 	}
+
+// 	if (min_proc < &proc[NPROC]) { // acquired a runnable proc's lock
+// 		for (struct proc *iter_p = min_proc + 1; iter_p < &proc[NPROC]; ++iter_p) {
+// 			acquire(&iter_p->lock);
+
+// 			if (iter_p->state == RUNNABLE && vruntime(iter_p) < vruntime(min_proc)) {
+// 				release(&min_proc->lock);
+// 				min_proc = iter_p;
+// 			}
+// 			else {
+// 				release(&iter_p->lock);
+// 			}
+// 		}
+
+// 		return min_proc;
+// 	}
+// 	else {
+// 		return NULL;
+// 	}
+// }
+
+/* as1ts6 */ struct proc* get_prioritized_process(uint8 (*prioritizer)(struct proc *, struct proc *)) {
+	struct proc *min_proc = proc;
+
+	for (; min_proc < &proc[NPROC]; ++min_proc) {
+		acquire(&min_proc->lock);
+
+		if (min_proc->state == RUNNABLE) {
+			break;
+		}
+
+		release(&min_proc->lock);
+	}
+
+	if (min_proc < &proc[NPROC]) { // acquired a runnable proc's lock
+		for (struct proc *iter_p = min_proc + 1; iter_p < &proc[NPROC]; ++iter_p) {
+			acquire(&iter_p->lock);
+
+			if (iter_p->state == RUNNABLE && prioritizer(iter_p, min_proc) == 1) {
+				release(&min_proc->lock);
+				min_proc = iter_p;
+			}
+			else {
+				release(&iter_p->lock);
+			}
+		}
+
+		return min_proc;
+	}
+	else {
+		return NULL;
+	}
+}
+
+/* as1ts6 */ void update_cfs_counters() {
+	for (struct proc *p = proc; p < &proc[NPROC]; p++) {
+		acquire(&p->lock);
+
+		switch (p->state) {
+			case RUNNING:
+			p->rtime += 1;
+			break;
+
+			case RUNNABLE:
+			p->retime += 1;
+			break;
+
+			case SLEEPING:
+			p->stime += 1;
+			break;
+
+			default:
+			break;
+		}
+
+		release(&p->lock);
+	}
+}
+
+/* as1ts6 */ struct proc* find_proc_by_pid(int target_pid) {
+	struct proc *p;
+
+	for (p = proc; p < &proc[NPROC]; p++) {
+		acquire(&p->lock);
+
+		if (p->pid == target_pid) {
+			break;
+		}
+
+		release(&p->lock);
+	}
+
+	if ( ! (p < &proc[NPROC])) {
+		return NULL;
+	}
+	
+	return p;
 }
 // =====================

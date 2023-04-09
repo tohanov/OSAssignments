@@ -29,6 +29,8 @@ int exit(int, char*) __attribute__((noreturn)); // as1ts3
 int wait(int*, char*); // as1ts3
 void set_ps_priority(int); // as1ts5
 int get_ps_priority(void); // as1ts5
+int set_cfs_priority(int); // as1ts6
+void get_cfs_priority(int, uint64*); // as1ts6
 // =====================
 
 

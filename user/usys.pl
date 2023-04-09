@@ -41,4 +41,6 @@ entry("uptime");
 entry("memsize"); # as1ts2
 entry("set_ps_priority"); # as1ts5
 entry("get_ps_priority"); # as1ts5
+entry("set_cfs_priority"); # as1ts6
+entry("get_cfs_priority"); # as1ts6
 # =====================
