@@ -27,4 +27,5 @@
 #define SYS_get_ps_priority  24 // as1ts5
 #define SYS_set_cfs_priority  25 // as1ts6
 #define SYS_get_cfs_priority  26 // as1ts6
+#define SYS_set_policy  27 // as1ts7
 // =====================

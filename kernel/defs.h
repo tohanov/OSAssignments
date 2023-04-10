@@ -203,6 +203,7 @@ void update_ps_accumulator(struct proc *process); // as1ts5
 void update_cfs_counters(); // as1ts6
 struct proc* get_prioritized_process(uint8 (*prioritizer)(struct proc *, struct proc *)); // as1ts6
 struct proc* find_proc_by_pid(int target_pid); // as1ts6
+struct proc* get_round_robin_process(struct proc *current_process); // as1ts7
 
 #define NULL 	0
 
@@ -210,9 +211,18 @@ typedef char bool;
 #define TRUE 	((bool)1)
 #define FALSE 	((bool)0)
 
-enum CFS_PRIORITIES {
+enum CFS_PRIORITIES { // as1ts6
 	HIGH = 0,
 	NORMAL = 1,
 	LOW = 2,
 };
+
+enum SCHEDULING_POLICIES { // as1ts6
+	DEFAULT = 0,
+	PRIORITY_SCHED = 1,
+	CF_SCHED = 2,
+};
+
+extern struct spinlock sched_policy_lock; // as1ts7
+extern int sched_policy; // as1ts7
 // =====================

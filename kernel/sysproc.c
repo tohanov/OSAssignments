@@ -194,3 +194,20 @@ sys_get_cfs_priority(void)
 		4*sizeof(uint64)
 	);
 }
+
+
+/* as1ts7*/ uint64 
+sys_set_policy(void) {
+	int policy;
+	argint(0, &policy);
+
+	if (policy < 0 || policy > 2) return -1;
+
+	acquire(&sched_policy_lock);
+	sched_policy = policy;
+	release(&sched_policy_lock);
+	
+	// printf("after release in set_policy()\n");
+
+	return 0;
+}

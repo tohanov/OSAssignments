@@ -137,6 +137,7 @@ UPROGS=\
 	$U/_goodbye\
 	$U/_priority_changer\
 	$U/_cfs\
+	$U/_policy\
 
 fs.img: mkfs/mkfs README $(UPROGS)
 	mkfs/mkfs fs.img README $(UPROGS)

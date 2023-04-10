@@ -108,6 +108,7 @@ extern uint64 sys_set_ps_priority(void); // as1ts5
 extern uint64 sys_get_ps_priority(void); // as1ts5
 extern uint64 sys_set_cfs_priority(void); // as1ts6
 extern uint64 sys_get_cfs_priority(void); // as1ts6
+extern uint64 sys_set_policy(void); // as1ts7
 // =====================
 
 
@@ -142,6 +143,7 @@ static uint64 (*syscalls[])(void) = {
 [SYS_get_ps_priority]   sys_get_ps_priority, // as1ts5
 [SYS_set_cfs_priority]   sys_set_cfs_priority, // as1ts6
 [SYS_get_cfs_priority]   sys_get_cfs_priority, // as1ts6
+[SYS_set_policy]   sys_set_policy, // as1ts7
 // =====================
 };
 
