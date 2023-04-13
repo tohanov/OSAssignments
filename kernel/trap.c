@@ -78,12 +78,9 @@ usertrap(void)
 
   // give up the CPU if this is a timer interrupt.
   if (which_dev == 2) {
-	// added for assignments
-	update_ps_accumulator(p);
 
-	if (cpuid() == 0) {
-		update_cfs_counters(); // as1ts6
-	}
+	// added for assignments
+	update_ps_accumulator(p); // as1ts5
 	// =====================
 
 	yield();
@@ -159,15 +156,10 @@ kerneltrap()
     panic("kerneltrap");
   }
 
-	// added for assignments 
-	if (which_dev == 2 && cpuid() == 0) {
-		update_cfs_counters(); // as1ts6
-	}
-	// =====================
-
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING) {
-	// added for assignments 
+
+	// added for assignments
 	update_ps_accumulator(myproc()); // as1ts5
 	// =====================
 	
@@ -186,6 +178,11 @@ clockintr()
 {
   acquire(&tickslock);
   ticks++;
+
+	// added for assignments
+	update_cfs_counters(); // as1ts6
+	// =====================
+	
   wakeup(&ticks);
   release(&tickslock);
 }

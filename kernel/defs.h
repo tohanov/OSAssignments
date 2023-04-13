@@ -194,12 +194,11 @@ void            virtio_disk_intr(void);
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
+
 // added for assignments
-// long long get_minimum_accumulator(); // as1ts5
 void set_accumulator_to_min(struct proc *process); // as1ts5
+long long get_min_accumulator_aside(struct proc *skip_process); // as1ts5
 void update_ps_accumulator(struct proc *process); // as1ts5
-// struct proc* get_min_accumulator_process(); // as1ts5
-// struct proc* get_min_vruntime_process(); // as1ts6
 void update_cfs_counters(); // as1ts6
 struct proc* get_prioritized_process(uint8 (*prioritizer)(struct proc *, struct proc *)); // as1ts6
 struct proc* find_proc_by_pid(int target_pid); // as1ts6

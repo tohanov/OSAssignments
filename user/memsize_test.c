@@ -14,5 +14,6 @@ main(int argc, char *argv[])
 	free(allocatedBytes);
 	
 	printf("process size after free() = %d\n", memsize());
-	exit(0, "");
+
+	return 0;
 }

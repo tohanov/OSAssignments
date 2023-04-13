@@ -169,9 +169,9 @@ main(void)
       runcmd(parsecmd(buf));
 
 	// added for assignments
-	char exit_msg[32];
-    wait(0, exit_msg);
-	if (exit_msg[0] != '\0') printf("%s\n", exit_msg);
+	char exit_msg[32]; // as1ts3
+    wait(0, exit_msg); // as1ts3
+	if (exit_msg[0] != '\0') printf("%s\n", exit_msg); // as1ts3
 	// =====================
   }
   exit(0, "");

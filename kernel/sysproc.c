@@ -12,7 +12,7 @@ sys_exit(void)
 	int n;
 
 	// added for assignments 
-		char exit_msg[32];
+		char exit_msg[32]; // as1ts3
 
 		if (argstr(1, exit_msg, 32) < 0) { // copy from user space to kernel space
 			exit_msg[31] = '\0';
@@ -41,7 +41,6 @@ sys_wait(void)
 {
   uint64 p;
   argaddr(0, &p);
-
 
 	// added for assignments
 	uint64 exit_msg; // as1ts2
@@ -149,7 +148,7 @@ sys_set_cfs_priority(void)
 	int priority;
 	argint(0, &priority);
 
-	if (priority > 2 || priority < 0) return -1;
+	if (priority > LOW || priority < HIGH) return -1;
 
 	struct proc *current_proc = myproc();
 
@@ -173,7 +172,7 @@ sys_get_cfs_priority(void)
 
 	uint64 return_array[4];
 
-	if (target_proc != NULL) { // found and locked proc
+	if (target_proc != NULL) { // if found and locked proc
 		return_array[0] = target_proc->cfs_priority;
 		return_array[1] = target_proc->rtime;
 		return_array[2] = target_proc->stime;
@@ -206,8 +205,6 @@ sys_set_policy(void) {
 	acquire(&sched_policy_lock);
 	sched_policy = policy;
 	release(&sched_policy_lock);
-	
-	// printf("after release in set_policy()\n");
 
 	return 0;
 }

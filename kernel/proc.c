@@ -10,8 +10,9 @@
 // added for assignments
 uint8 vruntime_prioritizer(struct proc* process1, struct proc* process2); // as1ts6
 uint8 accumulator_prioritizer(struct proc* process1, struct proc* process2); // as1ts6
+
 struct spinlock sched_policy_lock; // as1ts7
-int sched_policy = DEFAULT;//PRIORITY_SCHED; // as1ts7
+int sched_policy = DEFAULT; // as1ts7
 // =====================
 
 struct cpu cpus[NCPU];
@@ -56,13 +57,13 @@ void
 procinit(void)
 {
   struct proc *p;
+  initlock(&pid_lock, "nextpid");
+  initlock(&wait_lock, "wait_lock");
 
 	// added for assignments
 	initlock(&sched_policy_lock, "sched"); // as1ts7
 	// =====================
 
-  initlock(&pid_lock, "nextpid");
-  initlock(&wait_lock, "wait_lock");
   for(p = proc; p < &proc[NPROC]; p++) {
       initlock(&p->lock, "proc");
       p->state = UNUSED;
@@ -137,16 +138,15 @@ found:
   p->pid = allocpid();
   p->state = USED;
 
-  // added for assignments
-  //   p->accumulator = get_minimum_accumulator(); // as1ts5
-  set_accumulator_to_min(p); // as1ts5
-  p->ps_priority = 5; // as1ts5
+	// added for assignments
+	set_accumulator_to_min(p); // as1ts5
+	p->ps_priority = 5; // as1ts5
 
-  p->cfs_priority = NORMAL; // as1ts6
-  p->retime = 1; // as1ts6 // to avoid division by zero in the formula
-  p->stime = 0; // as1ts6
-  p->rtime = 0; // as1ts6
-  // =====================
+	p->cfs_priority = NORMAL; // as1ts6
+	p->retime = 1; // as1ts6 // to avoid division by zero in the formula
+	p->stime = 0; // as1ts6
+	p->rtime = 0; // as1ts6
+	// =====================
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -370,7 +370,7 @@ reparent(struct proc *p)
 // Exit the current process.  Does not return.
 // An exited process remains in the zombie state
 // until its parent calls wait().
-void
+/* as1ts3 */ void
 exit(int status, char* exit_msg)
 {
   struct proc *p = myproc();
@@ -379,7 +379,7 @@ exit(int status, char* exit_msg)
     panic("init exiting");
 
 	// added for assignments
-	strncpy(p->exit_msg, exit_msg, 32); // copy to store, assumes null byte present
+	strncpy(p->exit_msg, exit_msg, 32); // as1ts3 // copy to store, assumes null byte present
 	// =====================
 
   // Close all open files.
@@ -418,7 +418,7 @@ exit(int status, char* exit_msg)
 
 // Wait for a child process to exit and return its pid.
 // Return -1 if this process has no children.
-int
+/* as1ts3 */ int
 wait(uint64 addr, uint64 usermode_exit_msg)
 {
   struct proc *pp;
@@ -445,8 +445,10 @@ wait(uint64 addr, uint64 usermode_exit_msg)
             release(&wait_lock);
             return -1;
           }
-
-			if (usermode_exit_msg != NULL) copyout(p->pagetable, usermode_exit_msg, pp->exit_msg, 32);
+			
+			// added for assignments
+			if (usermode_exit_msg != NULL) copyout(p->pagetable, usermode_exit_msg, pp->exit_msg, 32); // as1ts3
+			// =====================
 
           freeproc(pp);
           release(&pp->lock);
@@ -483,46 +485,22 @@ scheduler(void)
 
 	c->proc = 0;
 
-	p = proc - 1; // as1ts7 // initializing to enable integration with original policy
-
+	p = NULL; // as1ts7 // initializing to enable integration with original policy
+	
 	for(;;) {
 		// Avoid deadlock by ensuring that devices can interrupt.
 		intr_on();
 
-		// for (p = proc; p < &proc[NPROC]; p++)
-		// {
-		// 	acquire(&p->lock);
-		// 	if (p->state == RUNNABLE)
-		// 	{
-		// 		// Switch to chosen process.  It is the process's job
-		// 		// to release its lock and then reacquire it
-		// 		// before jumping back to us.
-		// 		p->state = RUNNING;
-		// 		c->proc = p;
-		// 		swtch(&c->context, &p->context);
-
-		// 		// Process is done running for now.
-		// 		// It should have changed its p->state before coming back.
-		// 		c->proc = 0;
-		// 	}
-		// 	release(&p->lock);
-		// }
-
-	// added for assignments
-
-		// acquire(&sched_policy_lock);
+		// added for assignments
+		acquire(&sched_policy_lock);
 		switch (sched_policy) {
 			case DEFAULT:
-				// printf("in default case\n");
 				p = get_round_robin_process(p);
-				// printf("p=%p\n", p);
 				break;
 			case PRIORITY_SCHED:
-				// printf("in ps case\n");
 				p = get_prioritized_process(accumulator_prioritizer);
 				break;
 			case CF_SCHED:
-				// printf("in cfs case\n");
 				p = get_prioritized_process(vruntime_prioritizer);
 				break;
 			default:
@@ -530,9 +508,9 @@ scheduler(void)
 				p = NULL;
 				break;
 		}
-		// release(&sched_policy_lock);
+		release(&sched_policy_lock);
 
-		if (p != NULL) { // got a locked runnable proc
+		if (p != NULL) { // if got a locked runnable process
 			// Switch to chosen process.  It is the process's job
 			// to release its lock and then reacquire it
 			// before jumping back to us.
@@ -545,7 +523,7 @@ scheduler(void)
 			c->proc = NULL;
 			release(&p->lock);
 		}
-	// =====================
+		// =====================
 	}
 }
 
@@ -646,11 +624,19 @@ wakeup(void *chan)
 {
   struct proc *p;
 
+	// added for assignments
+	long long min_accumulator = get_min_accumulator_aside(NULL); // as1ts5
+	// =====================
+
   for(p = proc; p < &proc[NPROC]; p++) {
     if(p != myproc()){
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
-		set_accumulator_to_min(p);
+
+		// added for assignments
+		p->accumulator = min_accumulator; // as1ts5
+		// =====================
+
         p->state = RUNNABLE;
       }
       release(&p->lock);
@@ -762,77 +748,40 @@ procdump(void)
 }
 
 
-
 // added for assignments
 
 /* as1ts5 */ long long min(long long value1, long long value2) {
 	return value1 < value2 ? value1 : value2;
 }
 
-/* as1ts5 */ long long get_min_accumulator_aside(int skip_pid) {
+/* as1ts5 */ long long get_min_accumulator_aside(struct proc *skip_process) {
 	struct proc *p;
 	long long minimum_accumulator = __LONG_LONG_MAX__;
-	bool only_running_runnable = TRUE;
+	bool no_runnings_or_runnables = TRUE;
 
 	for(p = proc; p < &proc[NPROC]; p++) {
-		// acquire(&p->lock);
-		if(p->pid != skip_pid 
-		&& (p->state == RUNNING || p->state == RUNNABLE)) {
-			only_running_runnable = 0;
-			minimum_accumulator = min(p->accumulator, minimum_accumulator);
-		}
+		if (p != skip_process) {
+			acquire(&p->lock);
 
-		if (only_running_runnable) {
-			minimum_accumulator = 0;
+			if(p->state == RUNNING || p->state == RUNNABLE) {
+				no_runnings_or_runnables = FALSE;
+				minimum_accumulator = min(p->accumulator, minimum_accumulator);
+			}
+			
+			release(&p->lock);
 		}
-
-		// release(&p->lock);
 	}
 
-	return minimum_accumulator;
+	return no_runnings_or_runnables ? 0 : minimum_accumulator;
 }
 
+// assumes lock of passed in process is held
 /* as1ts5 */ void set_accumulator_to_min(struct proc *process) {
-	process->accumulator = get_min_accumulator_aside(process->pid);
+	process->accumulator = get_min_accumulator_aside(process);
 }
 
 /* as1ts5 */ void update_ps_accumulator(struct proc *process) {
 	process->accumulator += process->ps_priority;
-}
-
-// if finds a runnable process, *locks it* and returns a pointer to it
-// else returns NULL
-/* as1ts5 */ struct proc* get_min_accumulator_process() {
-	struct proc *min_proc = proc;
-
-	for (; min_proc < &proc[NPROC]; ++min_proc) {
-		acquire(&min_proc->lock);
-
-		if (min_proc->state == RUNNABLE) {
-			break;
-		}
-
-		release(&min_proc->lock);
-	}
-
-	if (min_proc < &proc[NPROC]) { // acquired a runnable proc's lock
-		for (struct proc *iter_p = min_proc + 1; iter_p < &proc[NPROC]; ++iter_p) {
-			acquire(&iter_p->lock);
-
-			if (iter_p->state == RUNNABLE && iter_p->accumulator < min_proc->accumulator) {
-				release(&min_proc->lock);
-				min_proc = iter_p;
-			}
-			else {
-				release(&iter_p->lock);
-			}
-		}
-
-		return min_proc;
-	}
-	else {
-		return NULL;
-	}
 }
 
 /* as1ts6 */ uint8 calculate_vruntime(struct proc* process) {
@@ -851,39 +800,6 @@ procdump(void)
 		? 1: 2;
 }
 
-// /* as1ts6 */ struct proc* get_min_vruntime_process() {
-// 	struct proc *min_proc = proc;
-
-// 	for (; min_proc < &proc[NPROC]; ++min_proc) {
-// 		acquire(&min_proc->lock);
-
-// 		if (min_proc->state == RUNNABLE) {
-// 			break;
-// 		}
-
-// 		release(&min_proc->lock);
-// 	}
-
-// 	if (min_proc < &proc[NPROC]) { // acquired a runnable proc's lock
-// 		for (struct proc *iter_p = min_proc + 1; iter_p < &proc[NPROC]; ++iter_p) {
-// 			acquire(&iter_p->lock);
-
-// 			if (iter_p->state == RUNNABLE && vruntime(iter_p) < vruntime(min_proc)) {
-// 				release(&min_proc->lock);
-// 				min_proc = iter_p;
-// 			}
-// 			else {
-// 				release(&iter_p->lock);
-// 			}
-// 		}
-
-// 		return min_proc;
-// 	}
-// 	else {
-// 		return NULL;
-// 	}
-// }
-
 /* as1ts6 */ struct proc* get_prioritized_process(uint8 (*prioritizer)(struct proc *, struct proc *)) {
 	struct proc *min_proc = proc;
 
@@ -897,24 +813,22 @@ procdump(void)
 		release(&min_proc->lock);
 	}
 
-	if (min_proc < &proc[NPROC]) { // acquired a runnable proc's lock
-		for (struct proc *iter_p = min_proc + 1; iter_p < &proc[NPROC]; ++iter_p) {
-			acquire(&iter_p->lock);
+	if ( ! (min_proc < &proc[NPROC])) return NULL; // if no runnables in proc table
 
-			if (iter_p->state == RUNNABLE && prioritizer(iter_p, min_proc) == 1) {
-				release(&min_proc->lock);
-				min_proc = iter_p;
-			}
-			else {
-				release(&iter_p->lock);
-			}
+	// if found a runnable, can start comparison
+	for (struct proc *iter_p = min_proc + 1; iter_p < &proc[NPROC]; ++iter_p) {
+		acquire(&iter_p->lock);
+
+		if (iter_p->state == RUNNABLE && prioritizer(iter_p, min_proc) == 1) {
+			release(&min_proc->lock);
+			min_proc = iter_p;
 		}
+		else {
+			release(&iter_p->lock);
+		}
+	}
 
-		return min_proc;
-	}
-	else {
-		return NULL;
-	}
+	return min_proc;
 }
 
 /* as1ts6 */ void update_cfs_counters() {
@@ -949,102 +863,28 @@ procdump(void)
 		acquire(&p->lock);
 
 		if (p->pid == target_pid) {
-			break;
+			return p;
 		}
 
 		release(&p->lock);
 	}
 
-	if ( ! (p < &proc[NPROC])) {
-		return NULL;
-	}
-	
-	return p;
+	return NULL;
 }
 
-// for (p = proc; p < &proc[NPROC]; p++)
-// {
-// 	acquire(&p->lock);
-// 	if (p->state == RUNNABLE)
-// 	{
-// 		// Switch to chosen process.  It is the process's job
-// 		// to release its lock and then reacquire it
-// 		// before jumping back to us.
-// 		p->state = RUNNING;
-// 		c->proc = p;
-// 		swtch(&c->context, &p->context);
-
-// 		// Process is done running for now.
-// 		// It should have changed its p->state before coming back.
-// 		c->proc = 0;
-// 	}
-// 	release(&p->lock);
-// }
-
 /* as1ts7 */ struct proc* get_round_robin_process(struct proc *current_process) {
-	// struct proc *p;
-
-	// // search for a runnable process after current one in the processes table
-	// for (p = current_process + 1; p < &proc[NPROC]; p++) {
-
-	// 	acquire(&p->lock);
-	// 	printf("inside first loop, iteration=%d, index=%d\n", p - current_process, p - proc);
-
-	// 	if (p->state == RUNNABLE) {
-	// 		printf("hit");
-	// 		break;
-	// 	}
-
-	// 	release(&p->lock);
-	// }
-
-	// printf("after first loop\n");
-
-	// // if not found a runnable process after current one in the processes table
-	// if ( ! (p < &proc[NPROC])) {
-
-	// 	printf("inside if, before second loop\n");
-	// 	// search for a runnable process after current one in the processes table
-	// 	for (p = proc; p < current_process; p++) {
-	// 		printf("inside second loop\n");
-	// 		acquire(&p->lock);
-
-	// 		if (p->state == RUNNABLE) {
-	// 			break;
-	// 		}
-
-	// 		release(&p->lock);
-	// 	}
-
-	// 	if ( ! (p < current_process)) {
-	// 		return NULL;
-	// 	}
-	// }
-	
-	// // if not found a runnable process aside from current one in the processes table
-	// return p;
-
+	// check whether found a runnable process previously
 	struct proc *p = (current_process == NULL) ? proc : current_process + 1;
-
-	// printf("initializing p to %p, current_process=%p", p, current_process);
 
 	for (; p < &proc[NPROC]; ++p) {
 		acquire(&p->lock);
+
 		if (p->state == RUNNABLE) {
 			return p;
 		}
+		
 		release(&p->lock);
 	}
-
-	// if (current_process != NULL) return NULL;
-
-	// for (p = proc; p < current_process; ++p) {
-	// 	acquire(&p->lock);
-	// 	if (p->state == RUNNABLE) {
-	// 		return p;
-	// 	}
-	// 	release(&p->lock);
-	// }
 
 	return NULL;
 }

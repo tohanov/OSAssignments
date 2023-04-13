@@ -2,15 +2,12 @@
 // #include "kernel/stat.h"
 #include "user/user.h"
 
-void run_test(int sleep_seconds) {
-	uint64 sum = 0;
-
-	for (int i = 1; i <= 10; ++i) {
-		for (int i = 1; i <= 1e5; ++i) {
-			sum ^= i; // so the loop doesn't get optimized-out
-		}
-		// sleep(5);
-		sleep(1);
+void run_test(int sleep_time) {
+	for (int i = 1; i <= 1e6; ++i) {
+		// computation to slow-down execution of process
+		for (int j= 1; j <= 1000; ++j) {}
+		
+		if (i % (int)1e5 == 0) sleep(1);
 	}
 
 	int current_pid = getpid();
@@ -18,7 +15,7 @@ void run_test(int sleep_seconds) {
 	uint64 cfs_details[4];
 	get_cfs_priority(current_pid, cfs_details);
 
-	sleep(sleep_seconds);
+	sleep(sleep_time*5);
 
 	printf("pid=%d, cfs_priority=%d, rtime=%d, stime=%d, retime=%d\n", 
 		current_pid,
@@ -32,64 +29,16 @@ void run_test(int sleep_seconds) {
 int
 main(int argc, char *argv[])
 {
-	if (fork() == 0) { // start with normal and fork
-		run_test(0);
-		return 0;
-	}
+	const int CHILD_NUM = 6;
 
-	set_cfs_priority(0); // high 
-	if (fork() == 0) {
-		run_test(10);
-		return 0;
+	for (int i = 0; i < CHILD_NUM; ++i) {
+		set_cfs_priority(i % 3);
+
+		if (fork() == 0) {
+			run_test(i);
+			return 0;
+		}
 	}
-	
-	set_cfs_priority(2); // low
-	if (fork() == 0) {
-		run_test(20);
-		return 0;
-	}
-	
-	// set_cfs_priority(2); // low
-	// if (fork() == 0) {
-	// 	run_test(30);
-	// 	return 0;
-	// }
-	
-	// set_cfs_priority(2); // low
-	// if (fork() == 0) {
-	// 	run_test(40);
-	// 	return 0;
-	// }
-	
-	// set_cfs_priority(2); // low
-	// if (fork() == 0) {
-	// 	run_test(50);
-	// 	return 0;
-	// }
-	
-	// set_cfs_priority(2); // low
-	// if (fork() == 0) {
-	// 	run_test(60);
-	// 	return 0;
-	// }
-	
-	// set_cfs_priority(2); // low
-	// if (fork() == 0) {
-	// 	run_test(70);
-	// 	return 0;
-	// }
-	
-	// set_cfs_priority(2); // low
-	// if (fork() == 0) {
-	// 	run_test(80);
-	// 	return 0;
-	// }
-	
-	// set_cfs_priority(2); // low
-	// if (fork() == 0) {
-	// 	run_test(90);
-	// 	return 0;
-	// }
 	
 	while (wait(0, 0) != -1) {}
 
