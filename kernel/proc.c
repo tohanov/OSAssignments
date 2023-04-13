@@ -757,14 +757,14 @@ procdump(void)
 /* as1ts5 */ long long get_min_accumulator_aside(struct proc *skip_process) {
 	struct proc *p;
 	long long minimum_accumulator = __LONG_LONG_MAX__;
-	bool no_runnings_or_runnables = TRUE;
+	bool no_running_or_runnable = TRUE;
 
 	for(p = proc; p < &proc[NPROC]; p++) {
 		if (p != skip_process) {
 			acquire(&p->lock);
 
 			if(p->state == RUNNING || p->state == RUNNABLE) {
-				no_runnings_or_runnables = FALSE;
+				no_running_or_runnable = FALSE;
 				minimum_accumulator = min(p->accumulator, minimum_accumulator);
 			}
 			
@@ -772,7 +772,9 @@ procdump(void)
 		}
 	}
 
-	return no_runnings_or_runnables ? 0 : minimum_accumulator;
+	return 
+		no_running_or_runnable ? 0
+		: minimum_accumulator;
 }
 
 // assumes lock of passed in process is held
