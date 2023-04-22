@@ -50,10 +50,31 @@ struct trapframe {
   /* 280 */ uint64 t6;
 };
 
+// Per-CPU state.
+struct cpu {
+  struct kthread *kernel_thread;          // The process running on this cpu, or null.
+  struct context context;     // swtch() here to enter scheduler().
+  int noff;                   // Depth of push_off() nesting.
+  int intena;                 // Were interrupts enabled before push_off()?
+};
+
+extern struct cpu cpus[NCPU];
+
+enum thread_state { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+
 struct kthread
 {
+	struct spinlock lock;
+	enum thread_state state;        // Process state
+	void *chan;                  // If non-zero, sleeping on chan
+	uint64 kstack;                // Virtual address of kernel stack
+	int killed;                  // If non-zero, have been killed
+	int xstate;                  // Exit status to be returned to parent's wait
+	int thread_id;                     // Process ID
 
-  uint64 kstack;                // Virtual address of kernel stack
+	struct proc *process;         // Parent process
+	uint64 kstack;               // Virtual address of kernel stack
+	struct context context;      // swtch() here to run process
 
-  struct trapframe *trapframe;  // data page for trampoline.S
+	struct trapframe *trapframe;  // data page for trampoline.S
 };
