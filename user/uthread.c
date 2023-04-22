@@ -29,7 +29,7 @@ int uthread_create(void (*start_func)(), enum sched_priority priority) {
 	memset(&free_spot->context, 0, sizeof(struct context));
 
 	free_spot->context.ra = start_func;
-	free_spot->context.sp = free_spot->ustack;
+	free_spot->context.sp = free_spot->ustack + PGSIZE;
 	free_spot->priority = priority;
 	free_spot->state = RUNNABLE;
 

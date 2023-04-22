@@ -73,7 +73,7 @@ struct kthread
 	int thread_id;                     // Process ID
 
 	struct proc *process;         // Parent process
-	uint64 kstack;               // Virtual address of kernel stack
+	// uint64 kstack;               // Virtual address of kernel stack
 	struct context context;      // swtch() here to run process
 
 	struct trapframe *trapframe;  // data page for trampoline.S
