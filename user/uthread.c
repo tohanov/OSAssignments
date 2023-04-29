@@ -2,6 +2,7 @@
 #include "kernel/stat.h"
 #include "user/user.h"
 #include "uthread.h"
+#include "kernel/riscv.h"
 
 struct uthread process_threads[MAX_UTHREADS] = {0};
 struct uthread *current_thread = 0;
@@ -28,8 +29,8 @@ int uthread_create(void (*start_func)(), enum sched_priority priority) {
 	// found a free spot
 	memset(&free_spot->context, 0, sizeof(struct context));
 
-	free_spot->context.ra = start_func;
-	free_spot->context.sp = free_spot->ustack + PGSIZE;
+	free_spot->context.ra = (uint64)start_func;
+	free_spot->context.sp = (uint64)free_spot->ustack + PGSIZE;
 	free_spot->priority = priority;
 	free_spot->state = RUNNABLE;
 
@@ -102,6 +103,8 @@ int uthread_start_all() {
 	started = 1;
 
 	uthread_yield();
+
+	return 0;
 }
 
 

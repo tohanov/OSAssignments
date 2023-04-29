@@ -7,6 +7,7 @@
 #include "defs.h"
 
 extern struct proc proc[NPROC];
+extern void forkret(void);
 
 
 void kthreadinit(struct proc *p)
@@ -40,11 +41,11 @@ struct trapframe *get_kthread_trapframe(struct proc *p, struct kthread *kt)
 
 
 // TODO: delte this after you are done with task 2.2
-void allocproc_help_function(struct proc *p) {
-  p->kthread->trapframe = get_kthread_trapframe(p, p->kthread);
+// void allocproc_help_function(struct proc *p) {
+//   p->kthread->trapframe = get_kthread_trapframe(p, p->kthread);
 
-  p->context.sp = p->kthread->kstack + PGSIZE;
-}
+//   p->context.sp = p->kthread->kstack + PGSIZE;
+// }
 
 
 int alloc_thread_id(struct proc *process) {
@@ -61,7 +62,7 @@ int alloc_thread_id(struct proc *process) {
 }
 
 
-static struct proc *alloc_kernel_thread(struct proc *process) {
+/* static */ struct kthread* allocate_kernel_thread(struct proc *process) {
 
 	// acquire locks?
 
@@ -71,7 +72,7 @@ static struct proc *alloc_kernel_thread(struct proc *process) {
 	for ( ; iter < &table[NKT]; ++iter) {
 		acquire(&iter->lock);
 
-		if (iter->state == UNUSED) {
+		if (iter->state == KUNUSED) {
 			break;
 		}
 
@@ -80,7 +81,7 @@ static struct proc *alloc_kernel_thread(struct proc *process) {
 
 	if (iter == &table[NKT]) return 0;
 
-	int id = alloc_thread_id(process);
+	iter->thread_id = alloc_thread_id(process);
 	iter->state = USED;
 
 	iter->trapframe = get_kthread_trapframe(process, iter);
@@ -89,6 +90,15 @@ static struct proc *alloc_kernel_thread(struct proc *process) {
 
 	iter->context.ra = (uint64)forkret;
 	iter->context.sp = iter->kstack + PGSIZE;
+	iter->process = process;
 
 	return iter;
+}
+
+
+/* static */ void free_kernel_thread(struct kthread *kernel_thread) {
+	memset(kernel_thread, 0, sizeof(struct kthread));
+	// *kernel_thread = {0};
+
+	kernel_thread->state = UNUSED;
 }

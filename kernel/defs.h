@@ -112,10 +112,11 @@ void                kthreadinit(struct proc *);
 struct kthread*     mykthread();
 
 // TODO: delte this after you are done with task 2.2
-void allocproc_help_function(struct proc *p);
+// void allocproc_help_function(struct proc *p);
 
 // swtch.S
 void            swtch(struct context*, struct context*);
+void uswtch(struct context*, struct context*);
 
 // spinlock.c
 void            acquire(struct spinlock*);
@@ -194,3 +195,14 @@ void            virtio_disk_intr(void);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+// kthread.c
+struct kthread;
+
+struct kthread *allocate_kernel_thread(struct proc *process);
+void kthreadinit(struct proc *p);
+struct kthread *mykthread();
+struct trapframe *get_kthread_trapframe(struct proc *p, struct kthread *kt);
+int alloc_thread_id(struct proc *process);
+void free_kernel_thread(struct kthread *kernel_thread);
+

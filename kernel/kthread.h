@@ -50,6 +50,26 @@ struct trapframe {
   /* 280 */ uint64 t6;
 };
 
+// Saved registers for kernel context switches.
+struct context {
+  uint64 ra;
+  uint64 sp;
+
+  // callee-saved
+  uint64 s0;
+  uint64 s1;
+  uint64 s2;
+  uint64 s3;
+  uint64 s4;
+  uint64 s5;
+  uint64 s6;
+  uint64 s7;
+  uint64 s8;
+  uint64 s9;
+  uint64 s10;
+  uint64 s11;
+};
+
 // Per-CPU state.
 struct cpu {
   struct kthread *kernel_thread;          // The process running on this cpu, or null.
@@ -60,21 +80,20 @@ struct cpu {
 
 extern struct cpu cpus[NCPU];
 
-enum thread_state { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
+enum thread_state { KUNUSED, KUSED, KSLEEPING, KRUNNABLE, KRUNNING, KZOMBIE };
 
 struct kthread
 {
 	struct spinlock lock;
-	enum thread_state state;        // Process state
+	enum thread_state state;        // Thread state
 	void *chan;                  // If non-zero, sleeping on chan
 	uint64 kstack;                // Virtual address of kernel stack
 	int killed;                  // If non-zero, have been killed
 	int xstate;                  // Exit status to be returned to parent's wait
-	int thread_id;                     // Process ID
+	int thread_id;                     // Thread ID
 
 	struct proc *process;         // Parent process
-	// uint64 kstack;               // Virtual address of kernel stack
-	struct context context;      // swtch() here to run process
+	struct context context;      // swtch() here to run thread
 
 	struct trapframe *trapframe;  // data page for trampoline.S
 };

@@ -1,6 +1,6 @@
 #define STACK_SIZE  4000
 #define MAX_UTHREADS  4
-#include "spinlock.h"
+// #include "spinlock.h"
 
 enum sched_priority { LOW, MEDIUM, HIGH };
 
@@ -35,7 +35,7 @@ struct uthread {
 	// struct spinlock lock;
 };
 
-extern void uswtch(struct context*, struct context*);
+void uswtch(struct context*, struct context*);
 
 int uthread_create(void (*start_func)(), enum sched_priority priority);
 
