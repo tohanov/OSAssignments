@@ -129,7 +129,11 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
+  
+ acquire(&p->thread_ids_lock);
   p->next_thread_id = 1;
+  release(&p->thread_ids_lock);
+
 
 
   // Allocate a trapframe page.
@@ -171,7 +175,7 @@ freeproc(struct proc *p)
 	for (struct kthread *iterator = p->kthread; iterator < &p->kthread[NKT]; ++iterator) {
 		acquire(&iterator->lock);
 		free_kernel_thread(iterator);
-		// release(&iterator->lock);
+		release(&iterator->lock);
 	}
 
   if(p->base_trapframes)
@@ -320,6 +324,7 @@ fork(void)
 
   // Copy user memory from parent to child.
   if(uvmcopy(p->pagetable, np->pagetable, p->sz) < 0){
+	release(&np->kthread->lock); // TODO figure out the order
     freeproc(np);
     release(&np->lock);
     return -1;
@@ -350,12 +355,12 @@ fork(void)
   release(&wait_lock);
 
 
-  acquire(&np->lock);
+//   acquire(&np->lock);
   acquire(&np->kthread->lock);
   np->kthread->state = KRUNNABLE;
 //   np->state = RUNNABLE;
   release(&np->kthread->lock);
-  release(&np->lock);
+//   release(&np->lock);
 
   return pid;
 }
@@ -382,7 +387,7 @@ void
 exit(int status)
 {
   struct proc *p = myproc();
-  struct kthread *mkt = mykthread();
+//   struct kthread *mkt = mykthread();
 
   if(p == initproc)
     panic("init exiting");
@@ -409,12 +414,27 @@ exit(int status)
   // Parent might be sleeping in wait().
   wakeup(p->parent);
   
-//   acquire(&p->lock);
-  acquire(&mkt->lock); // TODO: figure out if needs releasing
+  acquire(&p->lock);
+//   acquire(&mkt->lock); // TODO: figure out if needs releasing
 
   p->xstate = status;
-  mkt->state = ZOMBIE;
+//   mkt->state = KZOMBIE;
   p->state = ZOMBIE;
+
+  // put all threads in state Zombie
+
+  struct kthread *iter = p->kthread;
+
+  for (; iter < &p->kthread[NKT]; ++iter) {
+	acquire(&iter->lock);
+	iter->xstate = status;
+	iter->state = KZOMBIE;
+	release(&iter->lock);
+  }
+
+  release(&p->lock);
+
+  acquire(&mykthread()->lock);
 
   release(&wait_lock);
 
@@ -647,13 +667,13 @@ wakeup(void *chan)
 
 		for (struct kthread *iterator = p->kthread; iterator < &p->kthread[NKT]; ++iterator) {
 			
-    		if(iterator != mykthread()) {
+    		// if(iterator != mykthread()) {
 				acquire(&iterator->lock);
 				if(iterator->state == KSLEEPING && iterator->chan == chan) {
 					iterator->state = KRUNNABLE;
 				}
 				release(&iterator->lock);
-			}
+			// }
 		}
 
     //   release(&p->lock);
@@ -670,10 +690,10 @@ kill(int pid)
   struct proc *p;
 
   for(p = proc; p < &proc[NPROC]; p++){
-    // acquire(&p->lock);
+    acquire(&p->lock);
 
     if(p->pid == pid){
-    //   p->killed = 1;
+      p->killed = 1;
 
 		for (struct kthread *iterator = p->kthread; iterator < &p->kthread[NKT]; ++iterator) {
 			acquire(&iterator->lock);
@@ -691,7 +711,7 @@ kill(int pid)
     //     p->state = RUNNABLE;
     //   }
 
-    //   release(&p->lock);
+      release(&p->lock);
       return 0;
     }
 

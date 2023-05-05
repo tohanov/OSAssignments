@@ -18,7 +18,7 @@ void kthreadinit(struct proc *p)
 	for (struct kthread *kt = p->kthread; kt < &p->kthread[NKT]; kt++)
 	{
 	initlock(&kt->lock, "thread lock");
-	kt->state = UNUSED;
+	kt->state = KUNUSED;
 	kt->process = p;
 
 	// WARNING: Don't change this line!
@@ -82,7 +82,7 @@ int alloc_thread_id(struct proc *process) {
 	if (iter == &table[NKT]) return 0;
 
 	iter->thread_id = alloc_thread_id(process);
-	iter->state = USED;
+	iter->state = KUSED;
 
 	iter->trapframe = get_kthread_trapframe(process, iter);
 
@@ -97,8 +97,19 @@ int alloc_thread_id(struct proc *process) {
 
 
 /* static */ void free_kernel_thread(struct kthread *kernel_thread) {
-	memset(kernel_thread, 0, sizeof(struct kthread));
+	// memset(kernel_thread, 0, sizeof(struct kthread));
 	// *kernel_thread = {0};
 
-	kernel_thread->state = UNUSED;
+	// kernel_thread->lock = (struct spinlock){0};
+	kernel_thread->chan = 0;
+	kernel_thread->killed = 0;
+	kernel_thread->xstate = 0;
+	kernel_thread->thread_id = 0;
+	kernel_thread->context = (struct context){0};
+	kernel_thread->process = 0;
+	kernel_thread->trapframe = 0;
+
+	// kernel_thread->kstack = 0; // FIXME remove
+
+	kernel_thread->state = KUNUSED;
 }
