@@ -111,6 +111,26 @@ exec(char *path, char **argv)
   if(copyout(pagetable, sp, (char *)ustack, (argc+1)*sizeof(uint64)) < 0)
     goto bad;
 
+	for (struct kthread *iterator = p->kthread; iterator < &p->kthread[NKT]; ++iterator) {
+		// acquire(&iterator->lock);
+		
+		if (iterator != mykthread()) {
+			kthread_kill(iterator->thread_id);
+		}
+
+		// release(&iterator->lock);
+	}
+
+	for (struct kthread *iterator = p->kthread; iterator < &p->kthread[NKT]; ++iterator) {
+		acquire(&iterator->lock);
+		
+		if (iterator != mykthread() && iterator->state != KUNUSED) {
+			release(&iterator->lock);
+			kthread_join(iterator->thread_id, 0);
+		} 
+		else release(&iterator->lock);
+	}
+
   // arguments to user main(argc, argv)
   // argc is returned via the system call return
   // value, which goes in a0.

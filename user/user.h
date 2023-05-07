@@ -39,3 +39,9 @@ void free(void*);
 int atoi(const char*);
 int memcmp(const void *, const void *, uint);
 void *memcpy(void *, const void *, uint);
+
+int kthread_create(void *(*start_func)(), void *stack, uint stack_size);
+int kthread_id();
+int kthread_kill(int ktid);
+void kthread_exit(int status);
+int kthread_join(int ktid, int *status);

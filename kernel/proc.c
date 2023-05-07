@@ -386,8 +386,33 @@ reparent(struct proc *p)
 void
 exit(int status)
 {
-  struct proc *p = myproc();
-//   struct kthread *mkt = mykthread();
+	// TODO see if needed
+	static char called = 0;
+	if (called) return;
+	called = 1;
+
+	struct proc *p = myproc();
+	//   struct kthread *mkt = mykthread();
+
+	for (struct kthread *iterator = p->kthread; iterator < &p->kthread[NKT]; ++iterator) {
+		// acquire(&iterator->lock);
+		
+		if (iterator != mykthread()) {
+			kthread_kill(iterator->thread_id);
+		}
+
+		// release(&iterator->lock);
+	}
+
+	for (struct kthread *iterator = p->kthread; iterator < &p->kthread[NKT]; ++iterator) {
+		acquire(&iterator->lock);
+		
+		if (iterator != mykthread() && iterator->state != KUNUSED) {
+			release(&iterator->lock);
+			kthread_join(iterator->thread_id, 0);
+		} 
+		else release(&iterator->lock);
+	}
 
   if(p == initproc)
     panic("init exiting");
@@ -667,13 +692,13 @@ wakeup(void *chan)
 
 		for (struct kthread *iterator = p->kthread; iterator < &p->kthread[NKT]; ++iterator) {
 			
-    		// if(iterator != mykthread()) {
+    		if(iterator != mykthread()) {
 				acquire(&iterator->lock);
 				if(iterator->state == KSLEEPING && iterator->chan == chan) {
 					iterator->state = KRUNNABLE;
 				}
 				release(&iterator->lock);
-			// }
+			}
 		}
 
     //   release(&p->lock);
@@ -794,4 +819,118 @@ procdump(void)
     printf("%d %s %s", p->pid, state, p->name);
     printf("\n");
   }
+}
+
+
+
+int kthread_create(void *(*start_func)(), void *stack, uint stack_size) {
+	static int counter = 0;
+
+	printf("kthread_create() called #%d\n", ++counter);
+
+	struct kthread *new_kthread = allocate_kernel_thread(myproc());
+	if (new_kthread == 0) return -1;
+
+	new_kthread->state = KRUNNABLE;
+	// new_kthread->kstack = stack_ptr; // FIXME might cause problems
+
+	new_kthread->trapframe->epc = (uint64)start_func;
+	new_kthread->trapframe->sp = (uint64)stack + stack_size;
+
+	release(&new_kthread->lock);
+
+	return new_kthread->thread_id;
+}
+
+int kthread_kill(int ktid){
+	struct proc *process = myproc();
+	for (struct kthread *iterator = process->kthread; iterator < &process->kthread[NKT]; ++iterator) {
+		acquire(&iterator->lock);
+		
+		if (iterator->thread_id == ktid) {
+			iterator->killed = 1;
+
+			if (iterator->state == KSLEEPING) iterator->state = KRUNNABLE;
+			
+			release(&iterator->lock);
+			return 0;
+		}
+
+		release(&iterator->lock);
+	}
+
+	return -1;
+}
+
+char no_kthreads() {
+	struct proc *process = myproc();
+
+	for (struct kthread *iterator = process->kthread; iterator < &process->kthread[NKT]; ++iterator) {
+		acquire(&iterator->lock);
+		
+		if (iterator->state != KUNUSED) {
+			release(&iterator->lock);
+			return 0;
+		}
+
+		release(&iterator->lock);
+	}
+	
+	return 1;
+}
+
+void kthread_exit(int status) {
+	struct kthread *mkt = mykthread();
+	
+	acquire(&mkt->lock);
+
+	mkt->state = KZOMBIE;
+	mkt->xstate = status;
+
+	// TODO wakeup threads sleeping on this thread's chan
+	wakeup(mkt->chan);
+
+	release(&mkt->lock);
+}
+
+int kthread_join(int ktid, int *status) {
+	struct proc *process = myproc();
+	struct kthread *iterator;
+	for (iterator = process->kthread; iterator < &process->kthread[NKT]; ++iterator) {
+		acquire(&iterator->lock);
+		
+		if (iterator->thread_id == ktid) {
+			break;
+		}
+
+		release(&iterator->lock);
+	}
+	
+	if (iterator == &process->kthread[NKT]) return -1;
+
+	printf("before sleep on joined thread");
+
+	// enum thread_state state = iterator->state;
+	// while (iterator->state != KZOMBIE) {
+	if (iterator->state != KZOMBIE) {
+		sleep(iterator->chan, &iterator->lock);
+	}
+
+	printf("after sleep on joined thread");
+
+	int return_val = 0;
+
+	if (status != 0) {
+		return_val = copyout(
+			myproc()->pagetable, 
+			(uint64)status, 
+			(char *)&iterator->xstate, 
+			sizeof(iterator->xstate)
+		);
+	}
+
+	// TODO release lock
+	release(&iterator->lock);
+
+	return return_val;
 }

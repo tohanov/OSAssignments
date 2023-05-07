@@ -17,13 +17,13 @@ void kthreadinit(struct proc *p)
 
 	for (struct kthread *kt = p->kthread; kt < &p->kthread[NKT]; kt++)
 	{
-	initlock(&kt->lock, "thread lock");
-	kt->state = KUNUSED;
-	kt->process = p;
+		initlock(&kt->lock, "thread lock");
+		kt->state = KUNUSED;
+		kt->process = p;
 
-	// WARNING: Don't change this line!
-	// get the pointer to the kernel stack of the kthread
-	kt->kstack = KSTACK((int)((p - proc) * NKT + (kt - p->kthread)));
+		// WARNING: Don't change this line!
+		// get the pointer to the kernel stack of the kthread
+		kt->kstack = KSTACK((int)((p - proc) * NKT + (kt - p->kthread)));
 	}
 }
 
@@ -70,13 +70,16 @@ int alloc_thread_id(struct proc *process) {
 	struct kthread *table = process->kthread;
 
 	for ( ; iter < &table[NKT]; ++iter) {
-		acquire(&iter->lock);
+		if (iter != mykthread()) {
+			printf("loop at index %d\n", iter - table);
+			acquire(&iter->lock);
 
-		if (iter->state == KUNUSED) {
-			break;
+			if (iter->state == KUNUSED) {
+				break;
+			}
+
+			release(&iter->lock);
 		}
-
-		release(&iter->lock);
 	}
 
 	if (iter == &table[NKT]) return 0;
