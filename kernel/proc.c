@@ -387,9 +387,9 @@ void
 exit(int status)
 {
 	// TODO see if needed
-	static char called = 0;
-	if (called) return;
-	called = 1;
+	// static char called = 0;
+	// if (called) return;
+	// called = 1;
 
 	struct proc *p = myproc();
 	//   struct kthread *mkt = mykthread();
@@ -908,7 +908,7 @@ int kthread_join(int ktid, int *status) {
 	
 	if (iterator == &process->kthread[NKT]) return -1;
 
-	printf("before sleep on joined thread");
+	printf("before sleep on joined thread\n");
 
 	// enum thread_state state = iterator->state;
 	// while (iterator->state != KZOMBIE) {
@@ -916,7 +916,7 @@ int kthread_join(int ktid, int *status) {
 		sleep(iterator->chan, &iterator->lock);
 	}
 
-	printf("after sleep on joined thread");
+	printf("after sleep on joined thread\n");
 
 	int return_val = 0;
 

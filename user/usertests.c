@@ -2739,8 +2739,8 @@ struct test {
 //   {sbrklast, "sbrklast"},
 //   {sbrk8000, "sbrk8000"},
 //   {badarg, "badarg" },
-  {ulttest, "ulttest"},
-//   {klttest, "klttest"},
+//   {ulttest, "ulttest"},
+  {klttest, "klttest"},
 
   { 0, 0},
 };
