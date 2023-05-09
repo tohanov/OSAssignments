@@ -12,7 +12,6 @@ extern void forkret(void);
 
 void kthreadinit(struct proc *p)
 {
-
 	initlock(&p->thread_ids_lock, "thread ids lock");
 
 	for (struct kthread *kt = p->kthread; kt < &p->kthread[NKT]; kt++)
@@ -30,7 +29,13 @@ void kthreadinit(struct proc *p)
 
 struct kthread *mykthread()
 {
-	return cpus[cpuid()].kernel_thread;
+	struct kthread *temp;
+
+	push_off();
+	temp = mycpu()->kernel_thread;
+	pop_off();
+
+	return temp;
 }
 
 
@@ -63,15 +68,13 @@ int alloc_thread_id(struct proc *process) {
 
 
 /* static */ struct kthread* allocate_kernel_thread(struct proc *process) {
-
 	// acquire locks?
-
 	struct kthread *iter = process->kthread;
 	struct kthread *table = process->kthread;
 
 	for ( ; iter < &table[NKT]; ++iter) {
 		if (iter != mykthread()) {
-			printf("loop at index %d\n", iter - table);
+			// printf("loop at index %d\n", iter - table);
 			acquire(&iter->lock);
 
 			if (iter->state == KUNUSED) {

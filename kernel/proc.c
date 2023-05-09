@@ -824,12 +824,14 @@ procdump(void)
 
 
 int kthread_create(void *(*start_func)(), void *stack, uint stack_size) {
-	static int counter = 0;
-
-	printf("kthread_create() called #%d\n", ++counter);
+	// static int counter = 0;
+	// printf("kthread_create() called #%d\n", ++counter);
 
 	struct kthread *new_kthread = allocate_kernel_thread(myproc());
-	if (new_kthread == 0) return -1;
+	if (new_kthread == 0) {
+		// printf("allocation failed. returning -1\n");
+		return -1;
+	}
 
 	new_kthread->state = KRUNNABLE;
 	// new_kthread->kstack = stack_ptr; // FIXME might cause problems
@@ -837,7 +839,7 @@ int kthread_create(void *(*start_func)(), void *stack, uint stack_size) {
 	new_kthread->trapframe->epc = (uint64)start_func;
 	new_kthread->trapframe->sp = (uint64)stack + stack_size;
 
-	release(&new_kthread->lock);
+	release(&new_kthread->lock); // acquired in allocate_kernel_thread
 
 	return new_kthread->thread_id;
 }
@@ -880,22 +882,111 @@ char no_kthreads() {
 }
 
 void kthread_exit(int status) {
+	// FIXME call sched
 	struct kthread *mkt = mykthread();
 	
+	acquire(&wait_lock);
+	wakeup(mkt->chan);
 	acquire(&mkt->lock);
 
-	mkt->state = KZOMBIE;
 	mkt->xstate = status;
+	mkt->state = KZOMBIE;
 
 	// TODO wakeup threads sleeping on this thread's chan
-	wakeup(mkt->chan);
+	// wakeup(mkt->chan);
 
-	release(&mkt->lock);
+	// release(&mkt->lock);
+	release(&wait_lock);
+	sched();
+	panic("zombie exit");
+
+	// =======================
+	
+	// acquire(&wait_lock);
+
+	// Give any children to init.
+	// reparent(p);
+
+	// Parent might be sleeping in wait().
+	// wakeup(p->parent);
+
+	// acquire(&p->lock);
+	//   acquire(&mkt->lock); // TODO: figure out if needs releasing
+
+	// p->xstate = status;
+	//   mkt->state = KZOMBIE;
+	// p->state = ZOMBIE;
+
+
+	// release(&p->lock);
+
+	// acquire(&mykthread()->lock);
+
+	// release(&wait_lock);
+
+	// // Jump into the scheduler, never to return.
+	// sched();
+	// panic("zombie exit");
 }
+
+/*
+// Wait for a child process to exit and return its pid.
+// Return -1 if this process has no children.
+int
+wait(uint64 addr)
+{
+  struct proc *pp;
+  int havekids, pid;
+  struct proc *p = myproc();
+
+  acquire(&wait_lock);
+
+  for(;;){
+    // Scan through table looking for exited children.
+    havekids = 0;
+    for(pp = proc; pp < &proc[NPROC]; pp++){
+      if(pp->parent == p){
+        // make sure the child isn't still in exit() or swtch().
+        acquire(&pp->lock);
+
+        havekids = 1;
+        if(pp->state == ZOMBIE){
+          // Found one.
+          pid = pp->pid;
+          if(addr != 0 && copyout(p->pagetable, addr, (char *)&pp->xstate,
+                                  sizeof(pp->xstate)) < 0) {
+            release(&pp->lock);
+            release(&wait_lock);
+            return -1;
+          }
+          freeproc(pp);
+          release(&pp->lock);
+          release(&wait_lock);
+          return pid;
+        }
+        release(&pp->lock);
+      }
+    }
+
+    // No point waiting if we don't have any children.
+    if(!havekids || killed(p)){
+      release(&wait_lock);
+      return -1;
+    }
+    
+    // Wait for a child to exit.
+    sleep(p, &wait_lock);  //DOC: wait-sleep
+  }
+}
+*/
+
 
 int kthread_join(int ktid, int *status) {
 	struct proc *process = myproc();
 	struct kthread *iterator;
+	
+	acquire(&wait_lock);
+
 	for (iterator = process->kthread; iterator < &process->kthread[NKT]; ++iterator) {
 		acquire(&iterator->lock);
 		
@@ -906,21 +997,31 @@ int kthread_join(int ktid, int *status) {
 		release(&iterator->lock);
 	}
 	
-	if (iterator == &process->kthread[NKT]) return -1;
-
-	printf("before sleep on joined thread\n");
-
-	// enum thread_state state = iterator->state;
-	// while (iterator->state != KZOMBIE) {
-	if (iterator->state != KZOMBIE) {
-		sleep(iterator->chan, &iterator->lock);
+	if (iterator == &process->kthread[NKT]) {
+		// printf("matching kthread id not found. returning -1\n");
+		release(&wait_lock);
+		return -1;
 	}
 
-	printf("after sleep on joined thread\n");
+	// printf("before sleep on joined thread\n");
+
+	// enum thread_state state = iterator->state;
+	while (iterator->state != KZOMBIE && iterator->state != KUNUSED) {
+	// if (iterator->state != KZOMBIE) {
+		release(&iterator->lock);
+
+		// printf("going to sleep until state is KZOMBIE or KUNUSED.\n");
+		sleep(iterator->chan, &wait_lock/*&iterator->lock*/); //FIXME maybe need to release before releasing wait_lock and reaquire before sleeping
+		
+		acquire(&iterator->lock);
+	}
+
+	// printf("after sleep on joined thread\n");
 
 	int return_val = 0;
 
-	if (status != 0) {
+	if (status != 0) { // if not NULL
+		// printf("status pointer not NULL, writing kthread exit status %d\n", iterator->xstate);
 		return_val = copyout(
 			myproc()->pagetable, 
 			(uint64)status, 
@@ -929,8 +1030,12 @@ int kthread_join(int ktid, int *status) {
 		);
 	}
 
+	// printf("freeing kernel thread\n");
+	free_kernel_thread(iterator);
+	
 	// TODO release lock
 	release(&iterator->lock);
+	release(&wait_lock);
 
 	return return_val;
 }

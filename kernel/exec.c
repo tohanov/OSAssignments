@@ -120,6 +120,7 @@ exec(char *path, char **argv)
 
 		// release(&iterator->lock);
 	}
+	// kthread_kill(mykthread()); // TODO ??
 
 	for (struct kthread *iterator = p->kthread; iterator < &p->kthread[NKT]; ++iterator) {
 		acquire(&iterator->lock);

@@ -2579,7 +2579,7 @@ volatile enum sched_priority x;
 
 
 void uthread_a_start_func(void){
-	printf("inside uthread_a_start_func()\n");
+	// printf("inside uthread_a_start_func()\n");
   if(x != MEDIUM){
     printf("sched policy failed\n");
     exit(1);
@@ -2589,7 +2589,7 @@ void uthread_a_start_func(void){
     exit(1);
   }
   for(int i=0; i<10; i++){
-	printf("uthread_a_start_func(), loop=%d\n", i);
+	// printf("uthread_a_start_func(), loop=%d\n", i);
     sleep(10); // simulate work
   }
   uthread_exit();
@@ -2598,9 +2598,9 @@ void uthread_a_start_func(void){
 }
 
 void uthread_b_start_func(void){
-	printf("inside uthread_b_start_func()\n");
+	// printf("inside uthread_b_start_func()\n");
   for(int i=0; i<10; i++){
-	printf("uthread_b_start_func(), loop=%d\n", i);
+	// printf("uthread_b_start_func(), loop=%d\n", i);
     sleep(10); // simulate work
   }
   x = uthread_get_priority();
@@ -2612,17 +2612,17 @@ void uthread_b_start_func(void){
 void ulttest()
 {
   x = HIGH;
-  printf("before creating user thread 1\n");
+//   printf("before creating user thread 1\n");
   uthread_create(uthread_a_start_func, LOW);
-  printf("after creating user thread 1\n");
+//   printf("after creating user thread 1\n");
 
-  printf("before creating user thread 2\n");
+//   printf("before creating user thread 2\n");
   uthread_create(uthread_b_start_func, MEDIUM);
-  printf("after creating user thread 2\n");
+//   printf("after creating user thread 2\n");
 
-  printf("before start_all()\n");
+//   printf("before start_all()\n");
   uthread_start_all();
-  printf("after start_all()\n");
+//   printf("after start_all()\n");
 
   printf("uthread_start_all failed\n");
   exit(1);
@@ -2643,21 +2643,21 @@ void klttest()
   uint64 stack_a = (uint64)malloc(MAX_STACK_SIZE);
   uint64 stack_b = (uint64)malloc(MAX_STACK_SIZE);
 
-    printf("before creating kthread 1\n");
+    // printf("before creating kthread 1\n");
   int kt_a = kthread_create((void *(*)())kthread_start_func, (void *)stack_a, MAX_STACK_SIZE);
   if(kt_a <= 0){
     printf("kthread_create failed\n");
     exit(1);
   }
-    printf("after creating kthread 1\n");
+    // printf("after creating kthread 1\n");
 
-    printf("before creating kthread 2\n");
+    // printf("before creating kthread 2\n");
   int kt_b = kthread_create((void *(*)())kthread_start_func, (void *)stack_b, MAX_STACK_SIZE);
   if(kt_a <= 0){
     printf("kthread_create failed\n");
     exit(1);
   }
-    printf("after creating kthread 2\n");
+    // printf("after creating kthread 2\n");
 
   int joined = kthread_join(kt_a, 0);
   if(joined != 0){
@@ -2679,67 +2679,67 @@ struct test {
   void (*f)(char *);
   char *s;
 } quicktests[] = {
-//   {copyin, "copyin"},
-//   {copyout, "copyout"},
-//   {copyinstr1, "copyinstr1"},
-//   {copyinstr2, "copyinstr2"},
-//   {copyinstr3, "copyinstr3"},
-//   {rwsbrk, "rwsbrk" },
-//   {truncate1, "truncate1"},
-//   {truncate2, "truncate2"},
-//   {truncate3, "truncate3"},
-//   {openiputtest, "openiput"},
-//   {exitiputtest, "exitiput"},
-//   {iputtest, "iput"},
-//   {opentest, "opentest"},
-//   {writetest, "writetest"},
-//   {writebig, "writebig"},
-//   {createtest, "createtest"},
-//   {dirtest, "dirtest"},
-//   {exectest, "exectest"},
-//   {pipe1, "pipe1"},
-//   {killstatus, "killstatus"},
-//   {preempt, "preempt"},
-//   {exitwait, "exitwait"},
-//   {reparent, "reparent" },
-//   {twochildren, "twochildren"},
-//   {forkfork, "forkfork"},
-//   {forkforkfork, "forkforkfork"},
-//   {reparent2, "reparent2"},
-//   {mem, "mem"},
-//   {sharedfd, "sharedfd"},
-//   {fourfiles, "fourfiles"},
-//   {createdelete, "createdelete"},
-//   {unlinkread, "unlinkread"},
-//   {linktest, "linktest"},
-//   {concreate, "concreate"},
-//   {linkunlink, "linkunlink"},
-//   {subdir, "subdir"},
-//   {bigwrite, "bigwrite"},
-//   {bigfile, "bigfile"},
-//   {fourteen, "fourteen"},
-//   {rmdot, "rmdot"},
-//   {dirfile, "dirfile"},
-//   {iref, "iref"},
-//   {forktest, "forktest"},
-//   {sbrkbasic, "sbrkbasic"},
-//   {sbrkmuch, "sbrkmuch"},
-//   {kernmem, "kernmem"},
-//   {MAXVAplus, "MAXVAplus"},
-//   {sbrkfail, "sbrkfail"},
-//   {sbrkarg, "sbrkarg"},
-//   {validatetest, "validatetest"},
-//   {bsstest, "bsstest"},
-//   {bigargtest, "bigargtest"},
-//   {argptest, "argptest"},
-//   {stacktest, "stacktest"},
-//   {textwrite, "textwrite"},
-//   {pgbug, "pgbug" },
-//   {sbrkbugs, "sbrkbugs" },
-//   {sbrklast, "sbrklast"},
-//   {sbrk8000, "sbrk8000"},
-//   {badarg, "badarg" },
-//   {ulttest, "ulttest"},
+  {copyin, "copyin"},
+  {copyout, "copyout"},
+  {copyinstr1, "copyinstr1"},
+  {copyinstr2, "copyinstr2"},
+  {copyinstr3, "copyinstr3"},
+  {rwsbrk, "rwsbrk" },
+  {truncate1, "truncate1"},
+  {truncate2, "truncate2"},
+  {truncate3, "truncate3"},
+  {openiputtest, "openiput"},
+  {exitiputtest, "exitiput"},
+  {iputtest, "iput"},
+  {opentest, "opentest"},
+  {writetest, "writetest"},
+  {writebig, "writebig"},
+  {createtest, "createtest"},
+  {dirtest, "dirtest"},
+  {exectest, "exectest"},
+  {pipe1, "pipe1"},
+  {killstatus, "killstatus"},
+  {preempt, "preempt"},
+  {exitwait, "exitwait"},
+  {reparent, "reparent" },
+  {twochildren, "twochildren"},
+  {forkfork, "forkfork"},
+  {forkforkfork, "forkforkfork"},
+  {reparent2, "reparent2"},
+  {mem, "mem"},
+  {sharedfd, "sharedfd"},
+  {fourfiles, "fourfiles"},
+  {createdelete, "createdelete"},
+  {unlinkread, "unlinkread"},
+  {linktest, "linktest"},
+  {concreate, "concreate"},
+  {linkunlink, "linkunlink"},
+  {subdir, "subdir"},
+  {bigwrite, "bigwrite"},
+  {bigfile, "bigfile"},
+  {fourteen, "fourteen"},
+  {rmdot, "rmdot"},
+  {dirfile, "dirfile"},
+  {iref, "iref"},
+  {forktest, "forktest"},
+  {sbrkbasic, "sbrkbasic"},
+  {sbrkmuch, "sbrkmuch"},
+  {kernmem, "kernmem"},
+  {MAXVAplus, "MAXVAplus"},
+  {sbrkfail, "sbrkfail"},
+  {sbrkarg, "sbrkarg"},
+  {validatetest, "validatetest"},
+  {bsstest, "bsstest"},
+  {bigargtest, "bigargtest"},
+  {argptest, "argptest"},
+  {stacktest, "stacktest"},
+  {textwrite, "textwrite"},
+  {pgbug, "pgbug" },
+  {sbrkbugs, "sbrkbugs" },
+  {sbrklast, "sbrklast"},
+  {sbrk8000, "sbrk8000"},
+  {badarg, "badarg" },
+  {ulttest, "ulttest"},
   {klttest, "klttest"},
 
   { 0, 0},
@@ -3031,12 +3031,12 @@ outofinodes(char *s)
 }
 
 struct test slowtests[] = {
-//   {bigdir, "bigdir"},
-//   {manywrites, "manywrites"},
-//   {badwrite, "badwrite" },
-//   {execout, "execout"},
-//   {diskfull, "diskfull"},
-//   {outofinodes, "outofinodes"},
+  {bigdir, "bigdir"},
+  {manywrites, "manywrites"},
+  {badwrite, "badwrite" },
+  {execout, "execout"},
+  {diskfull, "diskfull"},
+  {outofinodes, "outofinodes"},
     
   { 0, 0},
 };
