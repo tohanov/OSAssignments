@@ -29,6 +29,17 @@ trapinithart(void)
   w_stvec((uint64)kernelvec);
 }
 
+int
+killedkthread(struct kthread *kt)
+{
+  int k;
+  
+  acquire(&kt->lock);
+  k = kt->killed;
+  release(&kt->lock);
+  return k;
+}
+
 //
 // handle an interrupt, exception, or system call from user space.
 // called from trampoline.S
@@ -55,6 +66,10 @@ usertrap(void)
 
     if(killed(p))
       exit(-1);
+
+
+    if(killedkthread(kt))
+      kthread_exit(-1);
 
     // sepc points to the ecall instruction,
     // but we want to return to the next instruction.
