@@ -89,3 +89,15 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+
+uint64
+sys_get_num_pages(void)
+{
+  uint num_pages;
+
+  acquire(&myproc()->lock);
+  num_pages = myproc()->num_user_pages;
+  release(&myproc()->lock);
+  return num_pages;
+}

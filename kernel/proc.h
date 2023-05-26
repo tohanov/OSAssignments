@@ -106,4 +106,6 @@ struct proc {
   char name[16];               // Process name (debugging)
 
   struct file *swapFile;
+
+  uint num_user_pages;
 };

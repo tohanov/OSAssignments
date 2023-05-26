@@ -1,34 +1,20 @@
 #include "ustack.h"
-#include <unistd.h> // for sbrk
+#include "user.h" // for sbrk
+#include "kernel/util.h"
 
-#define MAX_ALLOCATION 512 // bytes
-// #define NULL 0
-
-#define WITHOUT_HEADER(block) ((void *)block + sizeof(Header))
-#define END_OF_BLOCK(block) ((void *)block + sizeof(Header) + block->size)
-
-// typedef long Align;
-
-/* static */ union header {
-	union header *previous_block;
+typedef struct header {
+	struct header *previous_block;
 	unsigned size;
+} Header;
 
-		// char* deallocated;
-
-	// struct {
-	// } metadata;
-
-	// Align x;
-};
-
-typedef union header Header;
 
 static Header *stack_head = NULL;
-// static long long heap_size = 0; // total heap allocated by sbrk
-// static long long user_heap_size = 0; // total heap requested by user
 static uint currently_available_heap = 0; // until the end of the last allocated page
 
+
 void *ustack_malloc(uint requested_heap_size) {
+	debug_print("in ustack_malloc, currently_available_heap=%d, requested_heap_size=%d", currently_available_heap, requested_heap_size);
+
 	if (requested_heap_size > MAX_ALLOCATION) {
 		return (void *)-1;
 	}
@@ -36,50 +22,58 @@ void *ustack_malloc(uint requested_heap_size) {
 	Header *new_block;
 	uint requested_size_w_header = requested_heap_size + sizeof(Header); // size of buffer with metadata header
 
-	if (/* heap_size - user_heap_size */currently_available_heap >= requested_size_w_header) { // if enough is available from previous allocations
-		// at this point stack_head != NULL
+	debug_print("\trequested_size_w_header=%d", requested_size_w_header);
 
-		// user_heap_size += requested_size_w_header;
+	// if enough is available from previous allocations
+	if (currently_available_heap >= requested_size_w_header) {
+		// at this point stack_head != NULL
 		currently_available_heap -= requested_size_w_header;
 		new_block = END_OF_BLOCK(stack_head);
 	}
 	else {
 		void *free_memory = sbrk(PGSIZE);
-		// case: unable to allocate more memory; sbrk returns (void *) -1 on error
+
+		// if unable to allocate more memory; sbrk returns (void *) -1 on error
 		if (free_memory == (void *)(-1)) {
 			return (void *)-1;
 		}
 		
-		// heap_size += PGSIZE - (heap_size - user_heap_size);
-		// user_heap_size += requested_size_w_header;
 		currently_available_heap += PGSIZE - requested_size_w_header;
 
 		new_block = (Header *)free_memory;
 	}
 
 	new_block->size = requested_heap_size;
+	debug_print("\tupdating size to %d", requested_heap_size);
 	new_block->previous_block = stack_head;
 
 	stack_head = new_block;
 
+	debug_print("returning from ustack_malloc, currently_available_heap=%d", currently_available_heap);
 	return WITHOUT_HEADER(new_block);
 }
 
 
 int ustack_free(void) {
+	debug_print("in ustack_free, currently_available_heap=%d", currently_available_heap);
+
 	if (stack_head == NULL) {
 		return -1;
 	}
 
 	unsigned length_freed = stack_head->size;
+
+	debug_print("\tswitching stack_head from %p to %p", stack_head, stack_head->previous_block);
 	stack_head = stack_head->previous_block;
 
-	currently_available_heap += length_freed;
+	currently_available_heap += length_freed + sizeof(Header);
 
 	if (currently_available_heap >= PGSIZE) {
+		debug_print("\tin ustack_free if");
 		sbrk(-PGSIZE);
 		currently_available_heap -= PGSIZE;
 	}
 
+	debug_print("returning from ustack_free, currently_available_heap=%d, length_freed=%d", currently_available_heap, length_freed);
 	return length_freed;
 }
