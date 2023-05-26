@@ -114,11 +114,11 @@ exec(char *path, char **argv)
   // value, which goes in a0.
   p->trapframe->a1 = sp;
 
-  // Save program name for debugging.
-  for(last=s=path; *s; s++)
-    if(*s == '/')
-      last = s+1;
-  safestrcpy(p->name, last, sizeof(p->name));
+//   // Save program name for debugging.
+//   for(last=s=path; *s; s++)
+//     if(*s == '/')
+//       last = s+1;
+//   safestrcpy(p->name, last, sizeof(p->name));
     
   // Commit to the user image.
   oldpagetable = p->pagetable;
@@ -127,6 +127,12 @@ exec(char *path, char **argv)
   p->trapframe->epc = elf.entry;  // initial program counter = main
   p->trapframe->sp = sp; // initial stack pointer
   proc_freepagetable(oldpagetable, oldsz);
+
+  // Save program name for debugging.
+  for(last=s=path; *s; s++)
+    if(*s == '/')
+      last = s+1;
+  safestrcpy(p->name, last, sizeof(p->name));
 
   return argc; // this ends up in a0, the first argument to main(argc, argv)
 

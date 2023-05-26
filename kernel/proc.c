@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include "task2.h"
 
 struct cpu cpus[NCPU];
 
@@ -122,6 +123,7 @@ allocproc(void)
   return 0;
 
 found:
+	initialize_user_pages(p);
   p->pid = allocpid();
   p->state = USED;
 

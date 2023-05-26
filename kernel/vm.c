@@ -8,6 +8,7 @@
 
 #include "spinlock.h"
 #include "proc.h"
+#include "task2.h"
 
 /*
  * the kernel's page table.
@@ -189,6 +190,8 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
     if(do_free){
       uint64 pa = PTE2PA(*pte);
       kfree((void*)pa);
+
+		remove_user_page(va, pa);
     }
     *pte = 0;
   }
@@ -241,15 +244,14 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)
       uvmdealloc(pagetable, a, oldsz);
       return 0;
     }
-
-	++myproc()->num_user_pages;
-
     memset(mem, 0, PGSIZE);
     if(mappages(pagetable, a, PGSIZE, (uint64)mem, PTE_R|PTE_U|xperm) != 0){
       kfree(mem);
       uvmdealloc(pagetable, a, oldsz);
       return 0;
     }
+
+	add_user_page(a, NULL);
   }
   return newsz;
 }
@@ -268,8 +270,6 @@ uvmdealloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz)
     int npages = (PGROUNDUP(oldsz) - PGROUNDUP(newsz)) / PGSIZE;
     uvmunmap(pagetable, PGROUNDUP(newsz), npages, 1);
   }
-
-	--myproc()->num_user_pages;
 
   return newsz;
 }

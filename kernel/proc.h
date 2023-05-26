@@ -1,3 +1,5 @@
+#include "util.h"
+
 // Saved registers for kernel context switches.
 struct context {
   uint64 ra;
@@ -81,6 +83,16 @@ struct trapframe {
 
 enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
+
+typedef struct page_metadata {
+	// bool allocated;
+	pte_t pte;
+	uint64 virtual_address;
+	uint64 physical_address;
+	int offset_in_swapfile;
+} Page_metadata;
+
+
 // Per-process state
 struct proc {
   struct spinlock lock;
@@ -107,5 +119,7 @@ struct proc {
 
   struct file *swapFile;
 
-  uint num_user_pages;
+	uint num_user_pages;
+	Page_metadata user_pages[MAX_TOTAL_PAGES];
+	Page_metadata *next_to_swap_out;
 };

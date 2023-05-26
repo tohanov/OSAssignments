@@ -29,3 +29,5 @@ bool not_outlier_process();
 #define COLOR_WHITE "\e[1;37m"
 
 #define debug_print(...) { printf(COLOR_YELLOW"[*] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
+#define error_print(...) { printf(COLOR_RED"[!] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
+#define assert(x) {if (!(x)) { error_print(#x" doesn't hold") }}
