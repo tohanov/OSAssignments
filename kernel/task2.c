@@ -20,6 +20,10 @@ bool outlier_process() {
 
 bool slot_empty(Page_metadata *slot) {
 	// if slot page not present
+	// assert_print(!(slot->pte_flags & PTE_V));
+	// assert_print((slot->pte_flags & PTE_PG));
+	// error_print("");
+
 	return 
 		/* slot->pte == 0 ||  */
 		(!(slot->pte_flags & PTE_V))
@@ -40,6 +44,7 @@ Page_metadata * get_next_to_swap_out() {
 		debug_print("\tin loop i=%d", i);
 
 		if ( ! slot_empty(&process->user_pages[i])) {
+			debug_print("\treturn slot %d", i);
 			return &process->user_pages[i];
 		}
 	}
@@ -54,6 +59,9 @@ void mark_invalid(Page_metadata *to_swap_out) {
 
 
 bool is_swapped_out(Page_metadata *to_swap_out) {
+	assert_print(!(to_swap_out->pte_flags & PTE_V));
+	assert_print((to_swap_out->pte_flags & PTE_PG));
+
 	return 
 		!(to_swap_out->pte_flags & PTE_V) 
 		&& (to_swap_out->pte_flags & PTE_PG);
@@ -91,7 +99,9 @@ void swap_out_user_page() {
 
 	// write to swap file
 	uint64 physical_address = walkaddr(process->pagetable, to_swap_out->virtual_address);
-	writeToSwapFile(process, (char *)physical_address, to_swap_out->offset_in_swapfile, PGSIZE);
+	/* int ret_val =  */writeToSwapFile(process, (char *)physical_address, to_swap_out->offset_in_swapfile, PGSIZE);
+
+	// debug_print("\twriteToSwapFile wrote %d bytes", ret_val);
 
 	// kfree
 	kfree((void *)physical_address);
@@ -118,6 +128,7 @@ Page_metadata *find_slot_by_va(uint64 virtual_address) {
 
 		if (virtual_address == process->user_pages[i].virtual_address 
 			/* && !slot_empty(&process->user_pages[i]) */) {
+			debug_print("\treturn slot %d", i);
 
 			return &process->user_pages[i];
 		}
@@ -159,6 +170,8 @@ Page_metadata * get_empty_page_slot() {
 		debug_print("\tin loop i=%d", i);
 
 		if (slot_empty(&process->user_pages[i])) {
+			debug_print("\treturn slot %d", i);
+
 			return &process->user_pages[i];
 		}
 	}
@@ -287,11 +300,10 @@ void zero_out_paging_info(struct proc* process) {
 	if (process->swapFile == NULL) {
 		#ifdef DEBUG_PRINT
 			int return_value = createSwapFile(process);
+			debug_print("createSwapFile returned %d", return_value);
 		#else
 			createSwapFile(process);
 		#endif
-		
-		debug_print("createSwapFile returned %d", return_value);
 	}
 
 	debug_print("\twriting zeros to file");
