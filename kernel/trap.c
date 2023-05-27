@@ -36,6 +36,8 @@ trapinithart(void)
 void
 usertrap(void)
 {
+	// debug_print("in usertrap\n");
+
   int which_dev = 0;
 
   if((r_sstatus() & SSTATUS_SPP) != 0)
@@ -53,6 +55,8 @@ usertrap(void)
   if(r_scause() == 8){
     // system call
 
+	// debug_print("\tr_cause() == 8\n");
+
     if(killed(p))
       exit(-1);
 
@@ -65,9 +69,32 @@ usertrap(void)
     intr_on();
 
     syscall();
-  } else if((which_dev = devintr()) != 0){
+  } 
+	else if (r_scause() == 0xd || r_scause() == 0xf){
+		// got a page fault
+
+		debug_print("r_cause() == 13 or 15\n");
+
+		if (r_stval() >= p->sz) {
+			p->killed = 1;
+		}
+
+		uint64 vm_page_address = PGROUNDDOWN(r_stval()); // address of 
+
+		pte_t *accessed_page_pte = walk(p->pagetable, vm_page_address, 0);
+
+		// if page was swapped out
+		if ( ! (*accessed_page_pte & PTE_PG)) { 
+			// panic("page fault, not swapped out");
+			goto unexpected_scause;
+		}
+
+		swap_in_user_page(vm_page_address);
+	}
+  else if((which_dev = devintr()) != 0){
     // ok
   } else {
+unexpected_scause:
     printf("usertrap(): unexpected scause %p pid=%d\n", r_scause(), p->pid);
     printf("            sepc=%p stval=%p\n", r_sepc(), r_stval());
     setkilled(p);

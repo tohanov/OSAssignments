@@ -28,6 +28,20 @@ bool not_outlier_process();
 #define COLOR_LIGHT_GRAY "\e[0;37m"
 #define COLOR_WHITE "\e[1;37m"
 
-#define debug_print(...) { printf(COLOR_YELLOW"[*] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
-#define error_print(...) { printf(COLOR_RED"[!] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
-#define assert(x) {if (!(x)) { error_print(#x" doesn't hold") }}
+
+// #define DEBUG_PRINTS
+#define ERROR_PRINTS
+
+#ifdef DEBUG_PRINTS
+	#define debug_print(...) { printf(COLOR_YELLOW"[🤓] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
+#else
+	#define debug_print(...) {}
+#endif
+
+#ifdef ERROR_PRINTS
+	#define error_print(...) { printf(COLOR_RED"[👿] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
+	#define assert_print(x) {if (!(x)) { error_print(#x" doesn't hold") }}
+#else
+	#define error_print(...) {}
+	#define assert_print(x) {}
+#endif

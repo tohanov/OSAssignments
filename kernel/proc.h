@@ -86,9 +86,10 @@ enum procstate { UNUSED, USED, SLEEPING, RUNNABLE, RUNNING, ZOMBIE };
 
 typedef struct page_metadata {
 	// bool allocated;
-	pte_t pte;
+	// pte_t pte; // TODO save only flags instead of whole pte, pte itself is retrievable from VA
+	uint pte_flags; // TODO assignment and replace pte
 	uint64 virtual_address;
-	uint64 physical_address;
+	// uint64 physical_address;
 	int offset_in_swapfile;
 } Page_metadata;
 

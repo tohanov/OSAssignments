@@ -97,8 +97,12 @@ walk(pagetable_t pagetable, uint64 va, int alloc)
     if(*pte & PTE_V) {
       pagetable = (pagetable_t)PTE2PA(*pte);
     } else {
-      if(!alloc || (pagetable = (pde_t*)kalloc()) == 0)
+      if(!alloc || (pagetable = (pde_t*)kalloc()) == 0) {
+		debug_print("inside walk's if inside for");
+		assert_print(pagetable);
+		debug_print("\treturning zero");
         return 0;
+	  }
       memset(pagetable, 0, PGSIZE);
       *pte = PA2PTE(pagetable) | PTE_V;
     }
@@ -189,9 +193,10 @@ uvmunmap(pagetable_t pagetable, uint64 va, uint64 npages, int do_free)
       panic("uvmunmap: not a leaf");
     if(do_free){
       uint64 pa = PTE2PA(*pte);
-      kfree((void*)pa);
 
-		remove_user_page(va, pa);
+      kfree((void*)pa);
+	  
+		remove_user_page(va);
     }
     *pte = 0;
   }
@@ -251,7 +256,7 @@ uvmalloc(pagetable_t pagetable, uint64 oldsz, uint64 newsz, int xperm)
       return 0;
     }
 
-	add_user_page(a, NULL);
+	add_user_page(a);
   }
   return newsz;
 }

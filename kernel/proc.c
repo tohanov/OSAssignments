@@ -281,6 +281,8 @@ growproc(int n)
 int
 fork(void)
 {
+	debug_print("inside fork");
+	
   int i, pid;
   struct proc *np;
   struct proc *p = myproc();
@@ -315,6 +317,11 @@ fork(void)
   pid = np->pid;
 
   release(&np->lock);
+
+
+	debug_print("before copy_paging_info");
+	copy_paging_info(p, np);
+
 
   acquire(&wait_lock);
   np->parent = p;
@@ -352,6 +359,8 @@ exit(int status)
 
   if(p == initproc)
     panic("init exiting");
+
+	removeSwapFile(p);
 
   // Close all open files.
   for(int fd = 0; fd < NOFILE; fd++){
@@ -446,6 +455,8 @@ wait(uint64 addr)
 void
 scheduler(void)
 {
+	debug_print("in scheduler");
+
   struct proc *p;
   struct cpu *c = mycpu();
   
@@ -457,6 +468,7 @@ scheduler(void)
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
+		// debug_print("\tchoosing %s to run", p->name);
         // Switch to chosen process.  It is the process's job
         // to release its lock and then reacquire it
         // before jumping back to us.
