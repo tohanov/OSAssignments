@@ -29,7 +29,8 @@ bool not_outlier_process();
 #define COLOR_WHITE "\e[1;37m"
 
 
-// #define DEBUG_PRINTS
+#define DEBUG_PRINTS
+#define WARNING_PRINTS
 #define ERROR_PRINTS
 
 #ifdef DEBUG_PRINTS
@@ -44,4 +45,10 @@ bool not_outlier_process();
 #else
 	#define error_print(...) {}
 	#define assert_print(x) {}
+#endif
+
+#ifdef WARNING_PRINTS
+	#define warning_print(...) { printf(COLOR_YELLOW"[⚠] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
+#else
+	#define warning_print(...) {}
 #endif

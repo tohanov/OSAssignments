@@ -55,6 +55,7 @@ Page_metadata * get_next_to_swap_out() {
 
 void mark_invalid(Page_metadata *to_swap_out) {
 	to_swap_out->pte_flags &= ~PTE_V;
+	to_swap_out->pte_flags &= ~PTE_PG;
 }
 
 
@@ -226,6 +227,8 @@ void add_user_page(uint64 virtual_address) {
 
 void remove_user_page(uint64 virtual_address) {
 	// struct proc *process = myproc();
+
+	// assumes kfree has been called for the page
 
 	if (outlier_process()) {
 		if (myproc() != NULL) {
