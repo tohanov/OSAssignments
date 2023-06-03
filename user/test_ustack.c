@@ -33,12 +33,12 @@ int main(int argc, char *argv[]) {
 
 	assert_print(num_frees == num_allocations);
 
-	printf("\nallocating 17 pages and quitting to see if clearing pagetable succeeds\n");
+	printf("\nallocating %d pages and quitting to see if clearing pagetable succeeds\n", MAX_PSYC_PAGES + 1);
 	int num_allocations2 = 0;
-	while (get_num_pages() - initial_num_pages < 17) {
+	while (get_num_pages() - initial_num_pages < MAX_PSYC_PAGES + 1) {
 		++num_allocations2;
 		ustack_malloc(MAX_ALLOCATION);
-		printf("after #%d allocation has %d pages\n", num_allocations2, get_num_pages());
+		printf("after allocation #%d has %d pages\n", num_allocations2, get_num_pages());
 	}
 
 	return 0;

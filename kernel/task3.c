@@ -15,7 +15,7 @@ void update_data_structure(struct proc *process) {
 		// debug_print("inside update_data_structure");
 
 		if (outlier_process(process)) {
-			if (myproc() != NULL) {
+			if (process != NULL) {
 				// debug_print("\tOUTLIER, name=%s, returning", process->name);
 			}
 			else {
