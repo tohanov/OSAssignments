@@ -8,3 +8,5 @@ void initialize_user_pages(struct proc* process);
 
 void copy_paging_info(struct proc*, struct proc*);
 void zero_out_paging_info(struct proc* p);
+
+bool outlier_process(struct proc *);

@@ -7,9 +7,6 @@ typedef char bool;
 #define FALSE ((bool)0)
 #define TRUE ((bool)1)
 
-
-bool not_outlier_process();
-
 #define COLOR_NC "\e[0m"
 #define COLOR_BLACK "\e[0;30m"
 #define COLOR_GRAY "\e[1;30m"
@@ -27,6 +24,7 @@ bool not_outlier_process();
 #define COLOR_LIGHT_CYAN "\e[1;36m"
 #define COLOR_LIGHT_GRAY "\e[0;37m"
 #define COLOR_WHITE "\e[1;37m"
+#define COLOR_ORANGE "\e[38;2;255;165;0m"
 
 
 #define DEBUG_PRINTS
@@ -48,7 +46,7 @@ bool not_outlier_process();
 #endif
 
 #ifdef WARNING_PRINTS
-	#define warning_print(...) { printf(COLOR_YELLOW"[⚠] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
+	#define warning_print(...) { printf(COLOR_ORANGE"[🚨] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
 #else
 	#define warning_print(...) {}
 #endif

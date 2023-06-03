@@ -30,6 +30,7 @@ OBJS = \
   $K/plic.o \
   $K/virtio_disk.o \
   $K/task2.o \
+  $K/task3.o \
 
 # riscv64-unknown-elf- or riscv64-linux-gnu-
 # perhaps in /opt/riscv/bin
@@ -155,7 +156,7 @@ QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	then echo "-gdb tcp::$(GDBPORT)"; \
 	else echo "-s -p $(GDBPORT)"; fi)
 ifndef CPUS
-CPUS := 3
+CPUS := 1
 endif
 
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
@@ -173,3 +174,21 @@ qemu-gdb: $K/kernel .gdbinit fs.img
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
 
+
+##########################################
+NFUA	:= 1
+LAPA 	:= 2
+SCFIFO 	:= 3
+NONE 	:= 4
+
+CFLAGS += -DNFUA=$(NFUA)
+CFLAGS += -DLAPA=$(LAPA)
+CFLAGS += -DSCFIFO=$(SCFIFO)
+CFLAGS += -DNONE=$(NONE)
+
+CFLAGS += -DSWAP_ALGO=$(SWAP_ALGO)
+
+ifndef SWAP_ALGO
+SWAP_ALGO := SCFIFO
+endif
+##########################################

@@ -73,15 +73,18 @@ usertrap(void)
 	else if (r_scause() == 0xd || r_scause() == 0xf){
 		// got a page fault
 
-		debug_print("r_cause() == 13 or 15\n");
+		warning_print("got a pagefault: r_cause() == 13 or 15");
 
 		if (r_stval() >= p->sz) {
 			p->killed = 1;
 		}
 
+		warning_print("\tr_stval()=%p", r_stval());
 		uint64 vm_page_address = PGROUNDDOWN(r_stval()); // address of 
 
+		warning_print("\tbefore walk");
 		pte_t *accessed_page_pte = walk(p->pagetable, vm_page_address, 0);
+		warning_print("\tafter walk");
 
 		// if page was swapped out
 		if ( ! (*accessed_page_pte & PTE_PG)) { 

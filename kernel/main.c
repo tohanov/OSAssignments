@@ -41,5 +41,7 @@ main()
     plicinithart();   // ask PLIC for device interrupts
   }
 
+	warning_print("SWAP_ALGO=%d", SWAP_ALGO);
+
   scheduler();
 }

@@ -5,7 +5,6 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-#include "task2.h"
 
 struct cpu cpus[NCPU];
 
@@ -319,7 +318,7 @@ fork(void)
   release(&np->lock);
 
 
-	debug_print("before copy_paging_info");
+	// debug_print("before copy_paging_info");
 	copy_paging_info(p, np);
 
 
@@ -475,6 +474,10 @@ scheduler(void)
         p->state = RUNNING;
         c->proc = p;
         swtch(&c->context, &p->context);
+
+		#if (SWAP_ALGO == NFUA) || (SWAP_ALGO == LAPA)
+			update_data_structure(p);
+		#endif
 
         // Process is done running for now.
         // It should have changed its p->state before coming back.

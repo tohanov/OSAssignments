@@ -91,6 +91,11 @@ typedef struct page_metadata {
 	uint64 virtual_address;
 	// uint64 physical_address;
 	int offset_in_swapfile;
+
+	#if SWAP_ALGO == NFUA || SWAP_ALGO == LAPA
+		uint64 counter;
+	#endif
+
 } Page_metadata;
 
 
@@ -122,5 +127,8 @@ struct proc {
 
 	uint num_user_pages;
 	Page_metadata user_pages[MAX_TOTAL_PAGES];
-	Page_metadata *next_to_swap_out;
+
+	#if SWAP_ALGO == SCFIFO
+		Page_metadata *clock_handle;
+	#endif
 };
