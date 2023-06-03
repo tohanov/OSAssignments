@@ -27,9 +27,9 @@ typedef char bool;
 #define COLOR_ORANGE "\e[38;2;255;165;0m"
 
 
-#define DEBUG_PRINTS
-#define WARNING_PRINTS
-#define ERROR_PRINTS
+// #define DEBUG_PRINTS
+// #define WARNING_PRINTS
+// #define ERROR_PRINTS
 
 #ifdef DEBUG_PRINTS
 	#define debug_print(...) { printf(COLOR_YELLOW"[🤓] "); printf(__VA_ARGS__); printf("\n"COLOR_NC); }
