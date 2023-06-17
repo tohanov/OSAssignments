@@ -12,6 +12,8 @@
 #include "file.h"
 #include "stat.h"
 #include "proc.h"
+#include "fcntl.h"
+
 
 struct devsw devsw[NDEV];
 struct {
@@ -122,7 +124,7 @@ fileread(struct file *f, uint64 addr, int n)
     if((r = readi(f->ip, 1, addr, f->off, n)) > 0)
       f->off += r;
     iunlock(f->ip);
-  } else {
+  } else {	
     panic("fileread");
   }
 
@@ -180,3 +182,33 @@ filewrite(struct file *f, uint64 addr, int n)
   return ret;
 }
 
+
+int fileseek(struct file *f, int offset, int whence) {
+	if(	f->type != FD_INODE
+		|| (f->readable == 0 && f->writable == 0))
+		return -1;
+	
+	int new_offset;
+	switch(whence) {
+		case SEEK_CUR:
+			new_offset = f->off + offset;
+			break;
+		case SEEK_SET:
+			new_offset = offset;
+			break;
+		default:
+			return -1;
+	}
+	if (new_offset < 0) {
+		new_offset = 0;
+	}
+	else if (new_offset > f->ip->size) {
+		new_offset = f->ip->size;
+	}
+
+	ilock(f->ip);
+	f->off = (uint)new_offset;
+	iunlock(f->ip);
+
+	return 0;
+}
