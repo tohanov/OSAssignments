@@ -190,3 +190,4 @@ void            virtio_disk_intr(void);
 
 
 int fileseek(struct file *f, int offset, int whence);
+void randominit(void);

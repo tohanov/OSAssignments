@@ -20,8 +20,18 @@ main(void)
     mknod("console", CONSOLE, 0);
     open("console", O_RDWR);
   }
+
   dup(0);  // stdout
   dup(0);  // stderr
+
+	// int random_fd;
+	// if((random_fd = open("random", O_RDWR)) < 0){
+		mknod("random", RANDOM, 0);
+		// open("random", O_RDWR);
+	// }
+	// else {
+	// 	close(random_fd);
+	// }
 
   for(;;){
     printf("init: starting sh\n");
